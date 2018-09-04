@@ -80,7 +80,6 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     loss = 0.0
 
     encoder.flatten_parameters()
-    print(original_variable)
     encoder_output, encoder_hidden = encoder(original_variable)
 
     decoder_input = torch.zeros(1, 32)
