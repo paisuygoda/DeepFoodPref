@@ -82,7 +82,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder.flatten_parameters()
     encoder_output, encoder_hidden = encoder(original_variable)
 
-    decoder_input = torch.zeros(1, 32)
+    decoder_input = torch.autograd.Variable(torch.zeros(1, 32)).cuda()
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
