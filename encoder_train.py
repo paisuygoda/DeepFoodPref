@@ -62,8 +62,9 @@ class FoodSequenceDataset(Dataset):
         return len(self.ds)
 
     def __getitem__(self, idx):
-
-        return self.ds[idx]
+        user_id = self.ds[idx][0]
+        nutrition_log = self.ds[idx][2]
+        return user_id, nutrition_log
 
 
 def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=30):
@@ -73,8 +74,8 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    input_length = original_tensor.size(0)
-    target_length = original_tensor.size(0)
+    input_length = original_tensor.shape(0)
+    target_length = original_tensor.shape(0)
 
     encoder_outputs = torch.zeros(max_length, encoder.hidden_size)
 
@@ -128,7 +129,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
 
     for i in range(n_iters):
         # 後でbatchにする・全部回る
-        for iter, original_tensor in enumerate(dataloader):
+        for iter, (user_id, original_tensor) in enumerate(dataloader):
 
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
             print_loss_total += loss
