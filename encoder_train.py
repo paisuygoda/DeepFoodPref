@@ -68,22 +68,24 @@ class FoodSequenceDataset(Dataset):
         return user_id, log_len, nutrition_log
 
 
-def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=30):
+def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=61):
 
     teacher_forcing_ratio = 0.5
 
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
+    # torchのvariable化
+    original_variable = torch.autograd.Variable(original_tensor).cuda()
     encoder_outputs = torch.zeros(max_length, encoder.hidden_size)
 
     loss = 0.0
 
     for ei in range(tensor_len):
         if ei == 0:
-            encoder_output, encoder_hidden = encoder(original_tensor[ei])
+            encoder_output, encoder_hidden = encoder(original_variable[ei])
         else:
-            encoder_output, encoder_hidden = encoder(original_tensor[ei], encoder_hidden)
+            encoder_output, encoder_hidden = encoder(original_variable[ei], encoder_hidden)
         encoder_outputs[ei] = encoder_output[0, 0]
 
     decoder_input = torch.zeros(1, 32)
@@ -96,8 +98,8 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
         # Teacher forcing: Feed the target as the next input
         for di in range(tensor_len):
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            loss += criterion(decoder_output, original_tensor[di])
-            decoder_input = original_tensor[di]  # Teacher forcing
+            loss += criterion(decoder_output, original_variable[di])
+            decoder_input = original_variable[di]  # Teacher forcing
 
     else:
         # Without teacher forcing: use its own predictions as the next input
@@ -105,7 +107,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             decoder_input = decoder_output.detach()  # detach from history as input
 
-            loss += criterion(decoder_output, original_tensor[di])
+            loss += criterion(decoder_output, original_variable[di])
 
     loss.backward()
 
