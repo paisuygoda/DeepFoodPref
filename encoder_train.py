@@ -155,6 +155,6 @@ decoder_lstm = nn.LSTM(param.featDim, 32)
 dataset = FoodSequenceDataset()
 dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-trainIters(encoder_lstm, decoder_lstm, 10, print_every=100)
+trainIters(encoder_lstm, decoder_lstm, dataloader, 10, print_every=100)
 
 # データセットにID情報紐づけないと分類とかできない
