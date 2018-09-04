@@ -82,7 +82,8 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder.flatten_parameters()
     encoder_output, encoder_hidden = encoder(original_variable)
 
-    decoder_input = torch.autograd.Variable(torch.zeros(1, 32)).cuda()
+    print(original_tensor.size())
+    decoder_input = torch.autograd.Variable(torch.zeros(1, 1, 32)).cuda()
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
@@ -92,7 +93,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output, original_variable[di])
-            decoder_input = original_variable[di]  # Teacher forcing
+            decoder_input = original_variable[di].unsqeeze(0)  # Teacher forcing
 
     else:
         # Without teacher forcing: use its own predictions as the next input
