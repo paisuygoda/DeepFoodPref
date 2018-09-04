@@ -67,8 +67,6 @@ class FoodSequenceDataset(Dataset):
 
 
 def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=30):
-    encoder_hidden = encoder.initHidden()
-
     device = torch.device('cuda')
     teacher_forcing_ratio = 0.5
 
@@ -83,7 +81,10 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     loss = 0.0
 
     for ei in range(input_length):
-        encoder_output, encoder_hidden = encoder(original_tensor[ei], encoder_hidden)
+        if ei == 0:
+            encoder_output, encoder_hidden = encoder(original_tensor[ei])
+        else:
+            encoder_output, encoder_hidden = encoder(original_tensor[ei], encoder_hidden)
         encoder_outputs[ei] = encoder_output[0, 0]
 
     decoder_input = torch.tensor(np.zeros((1, 32)), device=device)
@@ -158,4 +159,3 @@ if __name__ == '__main__':
 
     trainIters(encoder_lstm, decoder_lstm, dataloader, 10, print_every=100)
 
-# データセットにID情報紐づけないと分類とかできない
