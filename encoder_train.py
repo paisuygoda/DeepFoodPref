@@ -67,7 +67,7 @@ class FoodSequenceDataset(Dataset):
 
 
 def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=30):
-    device = torch.device('cuda')
+
     teacher_forcing_ratio = 0.5
 
     encoder_optimizer.zero_grad()
@@ -76,7 +76,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     input_length = original_tensor.size(0)
     target_length = original_tensor.size(0)
 
-    encoder_outputs = torch.zeros(max_length, encoder.hidden_size, device=device)
+    encoder_outputs = torch.zeros(max_length, encoder.hidden_size)
 
     loss = 0.0
 
@@ -87,7 +87,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
             encoder_output, encoder_hidden = encoder(original_tensor[ei], encoder_hidden)
         encoder_outputs[ei] = encoder_output[0, 0]
 
-    decoder_input = torch.tensor(np.zeros((1, 32)), device=device)
+    decoder_input = torch.zeros(1, 32)
 
     decoder_hidden = encoder_hidden
 
