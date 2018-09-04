@@ -83,8 +83,10 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
 
     for ei in range(tensor_len):
         if ei == 0:
+            encoder.flatten_parameters()
             encoder_output, encoder_hidden = encoder(original_variable[ei])
         else:
+            encoder.flatten_parameters()
             encoder_output, encoder_hidden = encoder(original_variable[ei], encoder_hidden)
         encoder_outputs[ei] = encoder_output[0, 0]
 
@@ -97,6 +99,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     if use_teacher_forcing:
         # Teacher forcing: Feed the target as the next input
         for di in range(tensor_len):
+            decoder.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output, original_variable[di])
             decoder_input = original_variable[di]  # Teacher forcing
@@ -104,6 +107,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     else:
         # Without teacher forcing: use its own predictions as the next input
         for di in range(tensor_len):
+            decoder.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             decoder_input = decoder_output.detach()  # detach from history as input
 
