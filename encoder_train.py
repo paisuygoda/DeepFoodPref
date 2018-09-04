@@ -68,7 +68,7 @@ class FoodSequenceDataset(Dataset):
         return user_id, log_len, nutrition_log
 
 
-def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=61):
+def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
 
     teacher_forcing_ratio = 0.5
 
@@ -82,8 +82,8 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder.flatten_parameters()
     encoder_output, encoder_hidden = encoder(original_variable)
 
-    print(original_tensor.size())
-    decoder_input = torch.autograd.Variable(torch.zeros(1, 1, 32)).cuda()
+    decoder_input = torch.autograd.Variable(torch.zeros(batch_size, 1, 32)).cuda()
+    print(decoder_input.size())
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
@@ -112,7 +112,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     return loss.item() / tensor_len
 
 
-def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_every=100, learning_rate=0.01):
+def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=1000, plot_every=100, learning_rate=0.01):
     start = time.time()
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
@@ -127,7 +127,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
         for iter, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
 
             # tensor_lenの61はデータセット内の最大食事数
-            loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
+            loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
             plot_loss_total += loss
 
@@ -154,5 +154,5 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainIters(encoder_lstm, decoder_lstm, dataloader, 10, print_every=100)
+    trainIters(encoder_lstm, decoder_lstm, dataloader, 10, param.batchSize, print_every=100)
 
