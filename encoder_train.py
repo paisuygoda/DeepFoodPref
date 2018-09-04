@@ -119,7 +119,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
-    criterion = nn.NLLLoss()
+    criterion = nn.NLLLoss().cuda()
 
     for i in range(n_iters):
         # 後でbatchにする・全部回る
@@ -147,8 +147,8 @@ if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
 
-    encoder_lstm = nn.LSTM(32, param.featDim)
-    decoder_lstm = nn.LSTM(param.featDim, 32)
+    encoder_lstm = nn.LSTM(32, param.featDim).cuda()
+    decoder_lstm = nn.LSTM(param.featDim, 32).cuda()
 
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
