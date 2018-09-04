@@ -54,7 +54,7 @@ def get_parser():
 
 
 class FoodSequenceDataset(Dataset):
-    def __init__(self, csv_file='data/subdata/user_meals_dataset.p', transform=None):
+    def __init__(self, csv_file='data/subdata/user_meals_dataset.p'):
         with open(csv_file, mode='rb') as f:
             self.ds = pickle.load(f)
 
@@ -129,7 +129,8 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
         # 後でbatchにする・全部回る
         for iter, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
 
-            loss = train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
+            # tensor_lenの61はデータセット内の最大食事数
+            loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
             print_loss_total += loss
             plot_loss_total += loss
 
