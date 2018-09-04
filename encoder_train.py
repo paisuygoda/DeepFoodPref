@@ -75,26 +75,16 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    # torchのvariable化
     original_variable = torch.autograd.Variable(original_tensor).cuda()
-    encoder_outputs = torch.zeros(max_length, encoder.hidden_size)
 
     loss = 0.0
 
-    for ei in range(tensor_len):
-        if ei == 0:
-            encoder.flatten_parameters()
-            print(original_variable[ei])
-            encoder_output, encoder_hidden = encoder(original_variable[ei])
-        else:
-            encoder.flatten_parameters()
-            encoder_output, encoder_hidden = encoder(original_variable[ei], encoder_hidden)
-        encoder_outputs[ei] = encoder_output[0, 0]
+    encoder.flatten_parameters()
+    print(original_variable)
+    encoder_output, encoder_hidden = encoder(original_variable)
 
     decoder_input = torch.zeros(1, 32)
-
     decoder_hidden = encoder_hidden
-
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
     if use_teacher_forcing:
