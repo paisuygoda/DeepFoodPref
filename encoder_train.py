@@ -63,25 +63,23 @@ class FoodSequenceDataset(Dataset):
 
     def __getitem__(self, idx):
         user_id = self.ds[idx][0]
+        log_len = self.ds[idx][1]
         nutrition_log = self.ds[idx][2]
-        return user_id, nutrition_log
+        return user_id, log_len, nutrition_log
 
 
-def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=30):
+def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=30):
 
     teacher_forcing_ratio = 0.5
 
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    input_length = original_tensor.shape(0)
-    target_length = original_tensor.shape(0)
-
     encoder_outputs = torch.zeros(max_length, encoder.hidden_size)
 
     loss = 0.0
 
-    for ei in range(input_length):
+    for ei in range(tensor_len):
         if ei == 0:
             encoder_output, encoder_hidden = encoder(original_tensor[ei])
         else:
@@ -96,14 +94,14 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
 
     if use_teacher_forcing:
         # Teacher forcing: Feed the target as the next input
-        for di in range(target_length):
+        for di in range(tensor_len):
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output, original_tensor[di])
             decoder_input = original_tensor[di]  # Teacher forcing
 
     else:
         # Without teacher forcing: use its own predictions as the next input
-        for di in range(target_length):
+        for di in range(tensor_len):
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             decoder_input = decoder_output.detach()  # detach from history as input
 
@@ -114,7 +112,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     encoder_optimizer.step()
     decoder_optimizer.step()
 
-    return loss.item() / target_length
+    return loss.item() / tensor_len
 
 
 def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_every=100, learning_rate=0.01):
@@ -129,9 +127,9 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
 
     for i in range(n_iters):
         # 後でbatchにする・全部回る
-        for iter, (user_id, original_tensor) in enumerate(dataloader):
+        for iter, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
 
-            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
+            loss = train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
             print_loss_total += loss
             plot_loss_total += loss
 
