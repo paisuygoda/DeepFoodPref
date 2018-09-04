@@ -125,24 +125,24 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
     criterion = nn.NLLLoss()
 
-    for iter in range(1, n_iters + 1):
+    for i in range(n_iters):
         # 後でbatchにする・全部回る
-        original_tensor = dataloader(iter - 1)
+        for iter, original_tensor in enumerate(dataloader):
 
-        loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
-        print_loss_total += loss
-        plot_loss_total += loss
+            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
+            print_loss_total += loss
+            plot_loss_total += loss
 
-        if iter % print_every == 0:
-            print_loss_avg = print_loss_total / print_every
-            print_loss_total = 0
-            print('%s (%d %d%%) %.4f' % (timeSince(start, iter / n_iters),
-                                         iter, iter / n_iters * 100, print_loss_avg))
+            if iter % print_every == 0:
+                print_loss_avg = print_loss_total / print_every
+                print_loss_total = 0
+                print('%s (%d %d%%) %.4f' % (timeSince(start, iter / len(dataloader)),
+                                             iter, iter / len(dataloader) * 100, print_loss_avg))
 
-        if iter % plot_every == 0:
-            plot_loss_avg = plot_loss_total / plot_every
-            plot_losses.append(plot_loss_avg)
-            plot_loss_total = 0
+            if iter % plot_every == 0:
+                plot_loss_avg = plot_loss_total / plot_every
+                plot_losses.append(plot_loss_avg)
+                plot_loss_total = 0
 
     showPlot(plot_losses)
 
