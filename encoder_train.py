@@ -84,6 +84,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     for ei in range(tensor_len):
         if ei == 0:
             encoder.flatten_parameters()
+            print(original_variable[ei])
             encoder_output, encoder_hidden = encoder(original_variable[ei])
         else:
             encoder.flatten_parameters()
