@@ -83,9 +83,9 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder_output, encoder_hidden = encoder(original_variable)
 
     decoder_input = torch.autograd.Variable(torch.zeros(batch_size, 1, 32)).cuda()
-    print(decoder_input.size())
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
+    print(original_variable[0].unsqeeze(0).size())
 
     if use_teacher_forcing:
         # Teacher forcing: Feed the target as the next input
