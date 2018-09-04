@@ -146,15 +146,16 @@ def trainIters(encoder, decoder, dataloader, n_iters, print_every=1000, plot_eve
 
     showPlot(plot_losses)
 
-parser = get_parser()
-param = parser.parse_args()
+if __name__ == '__main__':
+    parser = get_parser()
+    param = parser.parse_args()
 
-encoder_lstm = nn.LSTM(32, param.featDim)
-decoder_lstm = nn.LSTM(param.featDim, 32)
+    encoder_lstm = nn.LSTM(32, param.featDim)
+    decoder_lstm = nn.LSTM(param.featDim, 32)
 
-dataset = FoodSequenceDataset()
-dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
+    dataset = FoodSequenceDataset()
+    dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-trainIters(encoder_lstm, decoder_lstm, dataloader, 10, print_every=100)
+    trainIters(encoder_lstm, decoder_lstm, dataloader, 10, print_every=100)
 
 # データセットにID情報紐づけないと分類とかできない
