@@ -65,8 +65,9 @@ class FoodSequenceDataset(Dataset):
     def __getitem__(self, idx):
         user_id = self.ds[idx][0]
         log_len = self.ds[idx][1]
-        nutrition_log = self.ds[idx][2]
-        return user_id, log_len, nutrition_log
+        firstday = self.ds[idx][2]
+        nutrition_log = self.ds[idx][3]
+        return user_id, log_len, firstday, nutrition_log
 
 
 class EncoderLSTM(nn.Module):
@@ -98,6 +99,7 @@ class DecoderLSTM(nn.Module):
         output, hidden = self.lstm(output, hidden)
         output = self.out(output)
         return output, hidden
+
 
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
 
@@ -144,7 +146,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     return loss.data.cpu().numpy()[0] / tensor_len
 
 
-def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=1000, plot_every=100, learning_rate=0.01):
+def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1000, plot_every=100, learning_rate=0.01):
     start = time.time()
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
@@ -155,43 +157,46 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
     criterion = nn.MSELoss().cuda()
 
-    for i in range(1, n_iters+1):
+    for i in range(1, n_epoch+1):
         # 後でbatchにする・全部回る
-        iterstart = time.time()
-        iter = 1
-        for j, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
-            iter = j+1
+        epochstart = time.time()
+        epoch = 1
+        for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
+            epoch = j+1
             # tensor_lenの61はデータセット内の最大食事数
             loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
             plot_loss_total += loss
             loss_total += loss
 
-            if iter % print_every == 0:
+            if epoch % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
-                print('%s (%d%%) %.4f' % (timeSince(iterstart, iter / (len(dataloader) + 1)), iter / (len(dataloader) + 1) * 100, print_loss_avg))
+                print('%s (%d%%) %.4f' % (timeSince(epochstart, epoch / (len(dataloader) + 1)), epoch / (len(dataloader) + 1) * 100, print_loss_avg))
 
-            if iter % plot_every == 0:
+            if epoch % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
                 plot_losses.append(plot_loss_avg)
                 plot_loss_total = 0
 
-        print('End of iter... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_iters), i / n_iters * 100, loss_total/iter))
+        print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
 
     showPlot(plot_losses)
 
 
-def extract_feature(encoder, dataloader, max_length):
+def extract_feature(encoder, dataloader, max_length, feat_dim):
 
     feature_dict = {}
-    for j, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
+    for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
         original_variable = torch.autograd.Variable(original_tensor.float()).cuda()
         encoder_hidden = False
         for i in range(max_length):
             encoder.lstm.flatten_parameters()
             _, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(),
                                         encoder_hidden)
+        feature = encoder_hidden[0].data.cpu().view(feat_dim).numpy()
+        print(feature)
+
 
 
 if __name__ == '__main__':
@@ -204,7 +209,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainIters(encoder_lstm, decoder_lstm, dataloader, 10, param.batchSize, print_every=100)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, 1, param.batchSize, print_every=100)
 
-    extract_feature(encoder_lstm, dataloader, param.maxLength)
+    extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
