@@ -101,7 +101,7 @@ class DecoderLSTM(nn.Module):
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
 
     teacher_forcing_ratio = 0.5
-
+    batch_size = original_tensor.size()[0]
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
