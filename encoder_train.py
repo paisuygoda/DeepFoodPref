@@ -158,7 +158,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
             if epoch % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
-                # print('%s (%d%%) %.4f' % (timeSince(epochstart, epoch / (len(dataloader) + 1)), epoch / (len(dataloader) + 1) * 100, print_loss_avg))
+                print('%s (%d%%) %.4f' % (timeSince(epochstart, epoch / (len(dataloader) + 1)), epoch / (len(dataloader) + 1) * 100, print_loss_avg))
 
             if epoch % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
