@@ -50,12 +50,13 @@ def get_parser():
     parser.add_argument('-g', '--gpu', default=0, nargs='+', type=int)
     parser.add_argument('--featDim', default=128, type=int)
     parser.add_argument('--batchSize', default=128, type=int)
-    parser.add_argument('--maxLength', default=61, type=int)
+    parser.add_argument('--maxLength', default=9, type=int)
+    parser.add_argument('--epoch', default=10, type=int)
     return parser
 
 
 class FoodSequenceDataset(Dataset):
-    def __init__(self, csv_file='data/subdata/user_meals_dataset.p'):
+    def __init__(self, csv_file='data/subdata/user_meals_dataset_FM.p'):
         with open(csv_file, mode='rb') as f:
             self.ds = pickle.load(f)
 
@@ -64,10 +65,9 @@ class FoodSequenceDataset(Dataset):
 
     def __getitem__(self, idx):
         user_id = self.ds[idx][0]
-        log_len = self.ds[idx][1]
-        firstday = self.ds[idx][2]
-        nutrition_log = self.ds[idx][3]
-        return user_id, log_len, firstday, nutrition_log
+        firstday = self.ds[idx][1]
+        nutrition_log = self.ds[idx][2]
+        return user_id, firstday, nutrition_log
 
 
 class EncoderLSTM(nn.Module):
@@ -91,19 +91,15 @@ class DecoderLSTM(nn.Module):
 
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
-        self.num_meal = nn.Linear(hidden_size, 1)
 
     def forward(self, input, hidden):
         output, hidden = self.lstm(input, hidden)
         pred = self.out(output)
-        num_meal = self.num_meal(output)
-        print(type(num_meal))
         return output, hidden, pred
 
 
-def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
+def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=9):
 
-    teacher_forcing_ratio = 0.5
     batch_size = original_tensor.size()[0]
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
@@ -151,10 +147,9 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
         epochstart = time.time()
         epoch = 1
         valid_epoch = 0
-        for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
+        for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
             epoch = j+1
-            # tensor_lenの61はデータセット内の最大食事数
-            loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
+            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
             plot_loss_total += loss
             if loss < 10000.0:
@@ -208,7 +203,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, 10, param.batchSize, print_every=100)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.batchSize, print_every=100)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
