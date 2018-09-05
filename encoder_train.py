@@ -121,8 +121,12 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
         decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
         decoder_input = decoder_output.detach()  # detach from history as input
 
-        loss += criterion(pred.view(batch_size, 31),
+        addloss = criterion(pred.view(batch_size, 31),
                           torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
+
+        if addloss > 1.0:
+            print(addloss)
+        loss += addloss
 
     if loss.data.cpu().numpy()[0] < 10000.0:
         loss.backward()
@@ -175,7 +179,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1
 def extract_feature(encoder, dataloader, max_length, feat_dim):
 
     feature_dict = {}
-    for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
+    for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         encoder_hidden = False
