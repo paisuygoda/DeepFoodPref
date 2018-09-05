@@ -115,28 +115,18 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder_hidden = False
     for i in range(max_length):
         encoder.lstm.flatten_parameters()
-        _, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(), encoder_hidden)
+        encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(), encoder_hidden)
 
-    decoder_input = torch.autograd.Variable(torch.zeros(batch_size, 1, 32)).cuda()
+    decoder_input = encoder_output
     decoder_hidden = encoder_hidden
-    use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
-    if use_teacher_forcing:
-        for i in range(max_length):
-            decoder.lstm.flatten_parameters()
-            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float()))
-            decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1))  # Teacher forcing
+    for di in range(max_length):
+        decoder.lstm.flatten_parameters()
+        decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        decoder_input = decoder_output.detach()  # detach from history as input
 
-    else:
-        for di in range(max_length):
-            decoder.lstm.flatten_parameters()
-            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            decoder_input = decoder_output.detach()  # detach from history as input
-
-            loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
+        loss += criterion(decoder_output.view(batch_size, 32),
+                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
 
     loss.backward()
 
@@ -158,7 +148,6 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
     criterion = nn.MSELoss().cuda()
 
     for i in range(1, n_epoch+1):
-        # 後でbatchにする・全部回る
         epochstart = time.time()
         epoch = 1
         for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
@@ -188,16 +177,24 @@ def extract_feature(encoder, dataloader, max_length, feat_dim):
 
     feature_dict = {}
     for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
+        batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float()).cuda()
         encoder_hidden = False
         for i in range(max_length):
             encoder.lstm.flatten_parameters()
-            _, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(),
-                                        encoder_hidden)
-        feature = encoder_hidden[0].data.cpu().view(feat_dim).numpy()
-        print(feature)
+            encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(),
+                                                     encoder_hidden)
+        features = encoder_hidden[0].data.cpu().view(batch_size, feat_dim).numpy()
+        user_id = user_id.data.cpu().view(batch_size).numpy()
+        firstday = firstday.data.cpu().view(batch_size.numpy())
+        for user, day, feature in zip(user_id, firstday, features):
+            if user in feature_dict:
+                feature_dict[user].append((day, feature))
+            else:
+                feature_dict[user] = [(day, feature)]
 
-
+    with open("data/subdata/food_pref.p", mode='wb') as f:
+        pickle.dump(feature_dict, f)
 
 if __name__ == '__main__':
     parser = get_parser()
