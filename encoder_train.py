@@ -49,7 +49,8 @@ def get_parser():
     parser.add_argument('--cuda', default=True, type=bool)
     parser.add_argument('-g', '--gpu', default=0, nargs='+', type=int)
     parser.add_argument('--featDim', default=128, type=int)
-    parser.add_argument('--batchSize', default=64, type=int)
+    parser.add_argument('--batchSize', default=128, type=int)
+    parser.add_argument('--maxLength', default=61, type=int)
     return parser
 
 
@@ -154,7 +155,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
     criterion = nn.MSELoss().cuda()
 
-    for i in range(n_iters):
+    for i in range(1, n_iters+1):
         # 後でbatchにする・全部回る
         iterstart = time.time()
         iter = 1
@@ -180,6 +181,19 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
 
     showPlot(plot_losses)
 
+
+def extract_feature(encoder, dataloader, max_length):
+
+    feature_dict = {}
+    for j, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
+        original_variable = torch.autograd.Variable(original_tensor.float()).cuda()
+        encoder_hidden = False
+        for i in range(max_length):
+            encoder.lstm.flatten_parameters()
+            _, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(),
+                                        encoder_hidden)
+
+
 if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
@@ -191,4 +205,6 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
     trainIters(encoder_lstm, decoder_lstm, dataloader, 10, param.batchSize, print_every=100)
+
+    extract_feature(encoder_lstm, dataloader, param.maxLength)
 
