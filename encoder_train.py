@@ -95,6 +95,7 @@ class DecoderLSTM(nn.Module):
         output = self.embedding(input)
         output = F.relu(output)
         output, hidden = self.lstm(output, hidden)
+        output = self.out(output)
         return output, hidden
 
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
@@ -121,8 +122,8 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
         for i in range(max_length):
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            loss += criterion(decoder_output.view(max_length, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(max_length, 32)))
+            loss += criterion(decoder_output.view(batch_size, 32),
+                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(batch_size, 32)))
             decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
 
     else:
@@ -132,8 +133,8 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
                 decoder_input = decoder_output.detach()  # detach from history as input
 
-                loss += criterion(decoder_output.view(61, 32),
-                                  torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(max_length, 32)))
+                loss += criterion(decoder_output.view(batch_size, 32),
+                                  torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(batch_size, 32)))
 
     loss.backward()
 
