@@ -103,7 +103,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
 
     if use_teacher_forcing:
         for i in range(max_length):
-            decoder.flatten_parameters()
+            decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output, original_variable[i])
             decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
