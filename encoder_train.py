@@ -125,7 +125,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
         loss += criterion(pred.view(batch_size, 32),
                           torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
 
-    if loss < 10000.0:
+    if loss.data.cpu().numpy()[0] < 10000.0:
         loss.backward()
         encoder_optimizer.step()
         decoder_optimizer.step()
@@ -158,7 +158,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
             if epoch % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
-                print('%s (%d%%) %.4f' % (timeSince(epochstart, epoch / (len(dataloader) + 1)), epoch / (len(dataloader) + 1) * 100, print_loss_avg))
+                # print('%s (%d%%) %.4f' % (timeSince(epochstart, epoch / (len(dataloader) + 1)), epoch / (len(dataloader) + 1) * 100, print_loss_avg))
 
             if epoch % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
@@ -167,7 +167,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
 
         print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
 
-    showPlot(plot_losses)
+    # showPlot(plot_losses)
 
 
 def extract_feature(encoder, dataloader, max_length, feat_dim):
