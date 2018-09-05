@@ -166,8 +166,8 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
             if iter % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
-                print('%s (%d %d%%) %.4f' % (timeSince(start, iter / len(dataloader+1)),
-                                             iter, iter / len(dataloader+1) * 100, print_loss_avg))
+                print('%s (%d %d%%) %.4f' % (timeSince(start, iter / len(dataloader)+1),
+                                             iter, iter / len(dataloader)+1 * 100, print_loss_avg))
 
             if iter % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
