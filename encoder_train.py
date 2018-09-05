@@ -201,7 +201,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, 1, param.batchSize, print_every=100)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, 10, param.batchSize, print_every=100)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
