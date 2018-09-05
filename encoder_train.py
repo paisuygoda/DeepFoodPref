@@ -91,11 +91,13 @@ class DecoderLSTM(nn.Module):
 
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
+        self.num_meal = nn.Linear(hidden_size, 1)
 
     def forward(self, input, hidden):
         output, hidden = self.lstm(input, hidden)
         pred = self.out(output)
-        return output, hidden, pred
+        num_meal = self.num_meal(output)
+        return output, hidden, pred, num_meal
 
 
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
@@ -105,32 +107,32 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    original_variable = torch.autograd.Variable(original_tensor.float()).cuda()
+    original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
 
     loss = 0.0
 
     encoder_hidden = False
     for i in range(max_length):
         encoder.lstm.flatten_parameters()
-        encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(), encoder_hidden)
+        encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(), encoder_hidden)
 
-    decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128))).cuda()
+    decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128)), requires_grad=False).cuda()
     decoder_hidden = encoder_hidden
 
     for di in range(max_length):
         decoder.lstm.flatten_parameters()
-        decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
+        decoder_output, decoder_hidden, pred, _ = decoder(decoder_input, decoder_hidden)
         decoder_input = decoder_output.detach()  # detach from history as input
 
         loss += criterion(pred.view(batch_size, 32),
-                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
+                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float(), requires_grad=False))
 
     if loss.data.cpu().numpy()[0] < 10000.0:
         loss.backward()
         encoder_optimizer.step()
         decoder_optimizer.step()
 
-    return loss.data.cpu().numpy()[0] / tensor_len
+    return loss.data.cpu().numpy()[0] / max_length
 
 
 def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1000, plot_every=100, learning_rate=0.1):
@@ -179,11 +181,11 @@ def extract_feature(encoder, dataloader, max_length, feat_dim):
     feature_dict = {}
     for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
         batch_size = original_tensor.size()[0]
-        original_variable = torch.autograd.Variable(original_tensor.float()).cuda()
+        original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         encoder_hidden = False
         for i in range(max_length):
             encoder.lstm.flatten_parameters()
-            encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(),
+            encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(),
                                                      encoder_hidden)
         features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
