@@ -72,13 +72,13 @@ class EncoderLSTM(nn.Module):
     def __init__(self, input_size, hidden_size):
         super(EncoderLSTM, self).__init__()
         self.hidden_size = hidden_size
-        self.gru = nn.GRU(input_size, hidden_size)
+        self.lstm = nn.LSTM(input_size, hidden_size)
 
     def forward(self, input, hidden=False):
         if hidden:
-            output, hidden = self.gru(input, hidden)
+            output, hidden = self.lstm(input, hidden)
         else:
-            output, hidden = self.gru(input)
+            output, hidden = self.lstm(input)
         return output, hidden
 
 
@@ -110,7 +110,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
 
     encoder_hidden = False
     for i in range(max_length):
-        encoder.flatten_parameters()
+        encoder.lstm.flatten_parameters()
         _, encoder_hidden = encoder(original_variable[i], encoder_hidden)
 
     decoder_input = torch.autograd.Variable(torch.zeros(batch_size, 1, 32)).cuda()
