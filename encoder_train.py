@@ -31,7 +31,7 @@ def timeSince(since, percent):
     s = now - since
     es = s / (percent)
     rs = es - s
-    return '%s (- %s)' % (asMinutes(s), asMinutes(rs))
+    return '%s (%s ETA)' % (asMinutes(s), asMinutes(rs))
 
 
 def showPlot(points):
@@ -119,14 +119,16 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
     if use_teacher_forcing:
+        print("Teacher Forcing")
         for i in range(max_length):
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float()))
-            decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
+                              original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float())
+            decoder_input = original_variable.data.narrow(1, i, 1)  # Teacher forcing
 
     else:
+        print("no TF")
             # Without teacher forcing: use its own predictions as the next input
         for di in range(max_length):
             decoder.lstm.flatten_parameters()
@@ -134,7 +136,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder_input = decoder_output.detach()  # detach from history as input
 
             loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float()))
+                              original_variable.narrow(1, di, 1).contiguous().view(batch_size, 32).float())
 
     loss.backward()
 
@@ -158,6 +160,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
         # 後でbatchにする・全部回る
         for j, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
             iter = j+1
+            iterstart = time.time()
             # tensor_lenの61はデータセット内の最大食事数
             loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
@@ -166,13 +169,14 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
             if iter % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
-                print('%s (%d %d%%) %.4f' % (timeSince(start, iter / len(dataloader)+1),
-                                             iter, iter / len(dataloader)+1 * 100, print_loss_avg))
+                print('%s (%d%%) %.4f' % (timeSince(iterstart, iter / len(dataloader) + 1), iter / len(dataloader) + 1 * 100, print_loss_avg))
 
             if iter % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
                 plot_losses.append(plot_loss_avg)
                 plot_loss_total = 0
+
+        print('End of iter... %s (%d%%)' % (timeSince(start, i / n_iters), i / n_iters * 100))
 
     showPlot(plot_losses)
 
