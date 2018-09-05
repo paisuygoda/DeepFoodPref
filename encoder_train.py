@@ -68,6 +68,21 @@ class FoodSequenceDataset(Dataset):
         return user_id, log_len, nutrition_log
 
 
+class DecoderLSTM(nn.Module):
+    def __init__(self, hidden_size, output_size):
+        super(DecoderLSTM, self).__init__()
+        self.hidden_size = hidden_size
+
+        self.embedding = nn.Linear(output_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.out = nn.Linear(hidden_size, output_size)
+
+    def forward(self, input, hidden):
+        output = self.embedding(input).view(1, 1, -1)
+        output = F.relu(output)
+        output, hidden = self.lstm(output, hidden)
+        return output, hidden
+
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
 
     teacher_forcing_ratio = 0.5
@@ -85,24 +100,24 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     decoder_input = torch.autograd.Variable(torch.zeros(batch_size, 1, 32)).cuda()
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
-    print(original_variable.data[0].unsqeeze(0).size())
+
+    decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
 
     if use_teacher_forcing:
-        # Teacher forcing: Feed the target as the next input
-        for di in range(tensor_len):
+        for i in range(max_length):
             decoder.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            loss += criterion(decoder_output, original_variable[di])
-            decoder_input = original_variable[di].unsqeeze(0)  # Teacher forcing
+            loss += criterion(decoder_output, original_variable)
+            decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
 
     else:
-        # Without teacher forcing: use its own predictions as the next input
-        for di in range(tensor_len):
-            decoder.flatten_parameters()
-            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            decoder_input = decoder_output.detach()  # detach from history as input
+            # Without teacher forcing: use its own predictions as the next input
+            for di in range(tensor_len):
+                decoder.flatten_parameters()
+                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+                decoder_input = decoder_output.detach()  # detach from history as input
 
-            loss += criterion(decoder_output, original_variable[di])
+                loss += criterion(decoder_output, original_variable[di])
 
     loss.backward()
 
@@ -149,7 +164,7 @@ if __name__ == '__main__':
     param = parser.parse_args()
 
     encoder_lstm = nn.LSTM(32, param.featDim).cuda()
-    decoder_lstm = nn.LSTM(param.featDim, 32).cuda()
+    decoder_lstm = DecoderLSTM(param.featDim, 32).cuda()
 
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
