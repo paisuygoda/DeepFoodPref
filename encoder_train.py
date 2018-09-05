@@ -123,7 +123,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(batch_size, 32).contigunous())())
+                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(batch_size, 32).contiguous())())
             decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
 
     else:
@@ -134,7 +134,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
                 decoder_input = decoder_output.detach()  # detach from history as input
 
                 loss += criterion(decoder_output.view(batch_size, 32),
-                                  torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(batch_size, 32).contigunous()))
+                                  torch.autograd.Variable(original_variable.data.narrow(1, i, 1).view(batch_size, 32).contiguous()))
 
     loss.backward()
 
