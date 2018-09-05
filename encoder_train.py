@@ -97,7 +97,8 @@ class DecoderLSTM(nn.Module):
         output, hidden = self.lstm(input, hidden)
         pred = self.out(output)
         num_meal = self.num_meal(output)
-        return output, hidden, pred, num_meal
+        print(type(num_meal))
+        return output, hidden, pred
 
 
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
@@ -121,7 +122,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
 
     for di in range(max_length):
         decoder.lstm.flatten_parameters()
-        decoder_output, decoder_hidden, pred, _ = decoder(decoder_input, decoder_hidden)
+        decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
         decoder_input = decoder_output.detach()  # detach from history as input
 
         loss += criterion(pred.view(batch_size, 32),
