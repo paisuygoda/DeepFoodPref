@@ -121,8 +121,9 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
         for i in range(max_length):
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            loss += criterion(decoder_output, original_variable.data.narrow(1, i, 1))
-            decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
+            ref = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()
+            loss += criterion(decoder_output, ref)
+            decoder_input = ref  # Teacher forcing
 
     else:
             # Without teacher forcing: use its own predictions as the next input
@@ -131,7 +132,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
                 decoder_input = decoder_output.detach()  # detach from history as input
 
-                loss += criterion(decoder_output, original_variable.data.narrow(1, i, 1))
+                loss += criterion(decoder_output, torch.autograd.Variable(original_variable.data.narrow(1, di, 1)).cuda())
 
     loss.backward()
 
