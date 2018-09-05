@@ -132,7 +132,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     return loss.data.cpu().numpy()[0] / max_length
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1000, plot_every=100, learning_rate=0.1):
+def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1000, plot_every=100, learning_rate=0.1):
     start = time.time()
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
@@ -149,7 +149,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
         valid_epoch = 0
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
             epoch = j+1
-            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
+            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
             print_loss_total += loss
             plot_loss_total += loss
             if loss < 10000.0:
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.batchSize, print_every=100)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, print_every=100)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
