@@ -138,7 +138,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
-    loss_total = 0
+
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
@@ -147,13 +147,16 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
     for i in range(1, n_epoch+1):
         epochstart = time.time()
         epoch = 1
+        valid_epoch = 0
         for j, (user_id, tensor_len, firstday, original_tensor) in enumerate(dataloader):
             epoch = j+1
             # tensor_lenの61はデータセット内の最大食事数
             loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
             plot_loss_total += loss
-            loss_total += loss
+            if loss < 10000.0:
+                loss_total += loss
+                valid_epoch += 1
 
             if epoch % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
@@ -165,8 +168,9 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1
                 plot_losses.append(plot_loss_avg)
                 plot_loss_total = 0
 
-        print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
-
+        if valid_epoch > 0:
+            print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
+            loss_total = 0
     # showPlot(plot_losses)
 
 
