@@ -135,7 +135,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder_input = decoder_output.detach()  # detach from history as input
 
             loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
+                              torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
 
     loss.backward()
 
