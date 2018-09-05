@@ -155,9 +155,9 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
 
     for i in range(n_iters):
         # 後でbatchにする・全部回る
+        iterstart = time.time()
         for j, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
             iter = j+1
-            iterstart = time.time()
             # tensor_lenの61はデータセット内の最大食事数
             loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
@@ -166,7 +166,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
             if iter % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
-                print('%s (%d%%) %.4f' % (timeSince(iterstart, iter / len(dataloader) + 1), iter / len(dataloader) + 1 * 100, print_loss_avg))
+                print('%s (%d%%) %.4f' % (timeSince(iterstart, iter / (len(dataloader) + 1)), iter / (len(dataloader) + 1) * 100, print_loss_avg))
 
             if iter % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
