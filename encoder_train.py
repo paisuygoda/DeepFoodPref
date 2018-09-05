@@ -123,18 +123,18 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output.view(batch_size, 32),
-                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32)))
+                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float()))
             decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
 
     else:
             # Without teacher forcing: use its own predictions as the next input
-            for di in range(max_length):
-                decoder.lstm.flatten_parameters()
-                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-                decoder_input = decoder_output.detach()  # detach from history as input
+        for di in range(max_length):
+            decoder.lstm.flatten_parameters()
+            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+            decoder_input = decoder_output.detach()  # detach from history as input
 
-                loss += criterion(decoder_output.view(batch_size, 32),
-                                  torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32)))
+            loss += criterion(decoder_output.view(batch_size, 32),
+                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float()))
 
     loss.backward()
 
