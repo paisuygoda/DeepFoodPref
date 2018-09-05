@@ -114,7 +114,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
         encoder.lstm.flatten_parameters()
         encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(), encoder_hidden)
 
-    decoder_input = encoder_output
+    decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128))).cuda()
     decoder_hidden = encoder_hidden
 
     for di in range(max_length):
@@ -133,7 +133,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     return loss.data.cpu().numpy()[0] / tensor_len
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1000, plot_every=100, learning_rate=0.01):
+def trainEpochs(encoder, decoder, dataloader, n_epoch, batch_size, print_every=1000, plot_every=100, learning_rate=0.1):
     start = time.time()
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
