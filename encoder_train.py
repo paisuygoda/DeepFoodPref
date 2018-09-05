@@ -89,16 +89,13 @@ class DecoderLSTM(nn.Module):
         super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
-        self.embedding = nn.Linear(output_size, hidden_size)
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
 
     def forward(self, input, hidden):
-        output = self.embedding(input)
-        output = F.relu(output)
-        output, hidden = self.lstm(output, hidden)
-        output = self.out(output)
-        return output, hidden
+        output, hidden = self.lstm(input, hidden)
+        pred = self.out(output)
+        return output, hidden, pred
 
 
 def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, max_length=61):
@@ -122,10 +119,10 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
 
     for di in range(max_length):
         decoder.lstm.flatten_parameters()
-        decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
         decoder_input = decoder_output.detach()  # detach from history as input
 
-        loss += criterion(decoder_output.view(batch_size, 32),
+        loss += criterion(pred.view(batch_size, 32),
                           torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
 
     loss.backward()
