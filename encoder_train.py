@@ -124,19 +124,18 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             loss += criterion(decoder_output.view(batch_size, 32),
-                              original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float())
-            decoder_input = original_variable.data.narrow(1, i, 1)  # Teacher forcing
+                              torch.autograd.Variable(original_variable.data.narrow(1, i, 1).contiguous().view(batch_size, 32).float()))
+            decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1))  # Teacher forcing
 
     else:
         print("no TF")
-            # Without teacher forcing: use its own predictions as the next input
         for di in range(max_length):
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             decoder_input = decoder_output.detach()  # detach from history as input
 
             loss += criterion(decoder_output.view(batch_size, 32),
-                              original_variable.narrow(1, di, 1).contiguous().view(batch_size, 32).float())
+                              torch.autograd.Variable(original_variable.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
 
     loss.backward()
 
