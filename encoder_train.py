@@ -141,7 +141,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     encoder_optimizer.step()
     decoder_optimizer.step()
 
-    return loss.data / tensor_len
+    return loss.data.numpy()[0] / tensor_len
 
 
 def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=1000, plot_every=100, learning_rate=0.01):
