@@ -148,6 +148,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
+    loss_total = 0
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
@@ -156,12 +157,14 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
     for i in range(n_iters):
         # 後でbatchにする・全部回る
         iterstart = time.time()
+        iter = 1
         for j, (user_id, tensor_len, original_tensor) in enumerate(dataloader):
             iter = j+1
             # tensor_lenの61はデータセット内の最大食事数
             loss = train(original_tensor, 61, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size)
             print_loss_total += loss
             plot_loss_total += loss
+            loss_total += loss
 
             if iter % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
@@ -173,7 +176,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
                 plot_losses.append(plot_loss_avg)
                 plot_loss_total = 0
 
-        print('End of iter... %s (%d%%)' % (timeSince(start, i / n_iters), i / n_iters * 100))
+        print('End of iter... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_iters), i / n_iters * 100, loss_total/iter))
 
     showPlot(plot_losses)
 
