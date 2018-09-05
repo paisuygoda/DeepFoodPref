@@ -111,7 +111,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     else:
             # Without teacher forcing: use its own predictions as the next input
             for di in range(max_length):
-                decoder.flatten_parameters()
+                decoder.lstm.flatten_parameters()
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
                 decoder_input = decoder_output.detach()  # detach from history as input
 
