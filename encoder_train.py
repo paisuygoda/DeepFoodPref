@@ -151,7 +151,7 @@ def trainIters(encoder, decoder, dataloader, n_iters, batch_size, print_every=10
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
-    criterion = nn.NLLLoss().cuda()
+    criterion = nn.MSELoss().cuda()
 
     for i in range(n_iters):
         # 後でbatchにする・全部回る
