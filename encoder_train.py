@@ -68,6 +68,20 @@ class FoodSequenceDataset(Dataset):
         return user_id, log_len, nutrition_log
 
 
+class EncoderLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(EncoderLSTM, self).__init__()
+        self.hidden_size = hidden_size
+        self.gru = nn.GRU(input_size, hidden_size)
+
+    def forward(self, input, hidden=False):
+        if hidden:
+            output, hidden = self.gru(input, hidden)
+        else:
+            output, hidden = self.gru(input)
+        return output, hidden
+
+
 class DecoderLSTM(nn.Module):
     def __init__(self, hidden_size, output_size):
         super(DecoderLSTM, self).__init__()
@@ -94,8 +108,10 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
 
     loss = 0.0
 
-    encoder.flatten_parameters()
-    encoder_output, encoder_hidden = encoder(original_variable)
+    encoder_hidden = False
+    for i in max_length:
+        encoder.flatten_parameters()
+        _, encoder_hidden = encoder(original_variable[i], encoder_hidden)
 
     decoder_input = torch.autograd.Variable(torch.zeros(batch_size, 1, 32)).cuda()
     decoder_hidden = encoder_hidden
@@ -161,7 +177,7 @@ if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
 
-    encoder_lstm = nn.LSTM(32, param.featDim).cuda()
+    encoder_lstm = EncoderLSTM(32, param.featDim).cuda()
     decoder_lstm = DecoderLSTM(param.featDim, 32).cuda()
 
     dataset = FoodSequenceDataset()
