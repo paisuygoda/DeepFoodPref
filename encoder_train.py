@@ -119,7 +119,6 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
     if use_teacher_forcing:
-        print("Teacher Forcing")
         for i in range(max_length):
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
@@ -128,7 +127,6 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
             decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1))  # Teacher forcing
 
     else:
-        print("no TF")
         for di in range(max_length):
             decoder.lstm.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
