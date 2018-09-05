@@ -182,8 +182,6 @@ def extract_feature(encoder, dataloader, max_length, feat_dim):
             encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda(),
                                                      encoder_hidden)
         features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
-        user_id = user_id.data.cpu().view(batch_size).numpy()
-        firstday = firstday.data.cpu().view(batch_size.numpy())
         for user, day, feature in zip(user_id, firstday, features):
             if user in feature_dict:
                 feature_dict[user].append((day, feature))
