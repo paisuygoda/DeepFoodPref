@@ -109,7 +109,7 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     loss = 0.0
 
     encoder_hidden = False
-    for i in max_length:
+    for i in range(max_length):
         encoder.flatten_parameters()
         _, encoder_hidden = encoder(original_variable[i], encoder_hidden)
 
