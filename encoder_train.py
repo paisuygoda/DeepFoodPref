@@ -125,10 +125,10 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
         loss += criterion(pred.view(batch_size, 32),
                           torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 32).float()))
 
-    loss.backward()
-
-    encoder_optimizer.step()
-    decoder_optimizer.step()
+    if loss < 10000.0:
+        loss.backward()
+        encoder_optimizer.step()
+        decoder_optimizer.step()
 
     return loss.data.cpu().numpy()[0] / tensor_len
 
