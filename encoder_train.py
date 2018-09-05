@@ -78,7 +78,7 @@ class DecoderLSTM(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
 
     def forward(self, input, hidden):
-        output = self.embedding(input).view(1, 1, -1)
+        output = self.embedding(input)
         output = F.relu(output)
         output, hidden = self.lstm(output, hidden)
         return output, hidden
@@ -101,18 +101,16 @@ def train(original_tensor, tensor_len, encoder, decoder, encoder_optimizer, deco
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
-    decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-
     if use_teacher_forcing:
         for i in range(max_length):
             decoder.flatten_parameters()
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-            loss += criterion(decoder_output, original_variable)
+            loss += criterion(decoder_output, original_variable[i])
             decoder_input = torch.autograd.Variable(original_variable.data.narrow(1, i, 1)).cuda()  # Teacher forcing
 
     else:
             # Without teacher forcing: use its own predictions as the next input
-            for di in range(tensor_len):
+            for di in range(max_length):
                 decoder.flatten_parameters()
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
                 decoder_input = decoder_output.detach()  # detach from history as input
