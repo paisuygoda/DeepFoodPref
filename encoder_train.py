@@ -126,8 +126,8 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
         addloss = criterion(pred.view(batch_size, 31),
                           torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
 
-        if addloss > 1.0:
-            print(addloss)
+        # if addloss > 1.0:
+        #     print(addloss)
         loss += addloss
 
     if loss.data.cpu().numpy()[0] < 10000.0:
