@@ -91,10 +91,12 @@ class DecoderLSTM(nn.Module):
 
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
+        self.fin = nn.ReLU()
 
     def forward(self, input, hidden):
         output, hidden = self.lstm(input, hidden)
         pred = self.out(output)
+        pred = self.fin(pred)
         return output, hidden, pred
 
 
@@ -176,10 +178,10 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1
     # showPlot(plot_losses)
 
 
-def extract_feature(encoder, dataloader, max_length, feat_dim):
+def extract_feature(encoder, datloader, max_length, feat_dim):
 
     feature_dict = {}
-    for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
+    for j, (user_id, firstday, original_tensor) in enumerate(datloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         encoder_hidden = False
