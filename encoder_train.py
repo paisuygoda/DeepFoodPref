@@ -130,12 +130,13 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
         #     print(addloss)
         loss += addloss
 
-    if loss.data.cpu().numpy()[0] < 10000.0:
+    lossval = loss.data.cpu().numpy()
+    if lossval < 10000.0:
         loss.backward()
         encoder_optimizer.step()
         decoder_optimizer.step()
 
-    return loss.data.cpu().numpy()[0] / max_length
+    return lossval / max_length
 
 
 def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1000, plot_every=100, learning_rate=0.1):
