@@ -53,6 +53,7 @@ def get_parser():
     parser.add_argument('--maxLength', default=9, type=int)
     parser.add_argument('--epoch', default=10, type=int)
     parser.add_argument('--lr', default=0.01, type=float)
+    parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
 
 
@@ -140,7 +141,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     return lossval / max_length
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, plot_every=100, learning_rate=0.01):
+def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95):
     start = time.time()
     loss_total = 0
     cur_lr = learning_rate
@@ -156,7 +157,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, plot_every=10
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
             loss_total += loss
 
-        cur_lr = cur_lr * 0.9
+        cur_lr = cur_lr * rate_decay
         for param_group in encoder_optimizer.param_groups:
             param_group['lr'] = cur_lr
         for param_group in decoder_optimizer.param_groups:
@@ -197,7 +198,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, learning_rate=param.lr)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, learning_rate=param.lr, rate_decay=param.rateDecay)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
