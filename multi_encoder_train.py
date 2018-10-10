@@ -150,11 +150,8 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
     criterion = nn.MSELoss().cuda()
 
     for i in range(1, n_epoch+1):
-        epoch = 1
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
-            epoch = j+1
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
-            loss_total += loss
 
         cur_lr = cur_lr * rate_decay
         for param_group in encoder_optimizer.param_groups:
@@ -162,8 +159,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
         for param_group in decoder_optimizer.param_groups:
             param_group['lr'] = cur_lr
 
-        print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
-        loss_total = 0
+    return loss
 
 
 def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/subdata/foodpref.p"):
@@ -184,7 +180,7 @@ def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/s
             else:
                 feature_dict[user] = [(day, feature)]
 
-    with open("data/subdata/food_pref.p", mode='wb') as f:
+    with open(outputfile, mode='wb') as f:
         pickle.dump(feature_dict, f)
 
 if __name__ == '__main__':
@@ -200,8 +196,9 @@ if __name__ == '__main__':
             filename = "data/subdata/user_meals_dataset_FM_days_"+str(day)+"_parts_"+str(part)+"_nut_31.p"
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
-            trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, learning_rate=param.lr, rate_decay=param.rateDecay)
-            extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim,
+            finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr, rate_decay=param.rateDecay)
+            print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}".format(finalloss))
+            extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_"+str(day)+"_days_"+str(parts)+"_parts_all_nut.p")
 
             encoder_lstm = EncoderLSTM(4, param.featDim).cuda()
@@ -209,9 +206,10 @@ if __name__ == '__main__':
             filename = "data/subdata/user_meals_dataset_FM_days_" + str(day) + "_parts_" + str(part) + "_nut_4.p"
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
-            trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, learning_rate=param.lr,
+            trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr,
                         rate_decay=param.rateDecay)
-            extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim,
+            print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}".format(finalloss))
+            extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(
                                 parts) + "_parts_major_nut.p")
 

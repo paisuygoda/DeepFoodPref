@@ -142,7 +142,6 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
 
 def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95):
     start = time.time()
-    loss_total = 0
     cur_lr = learning_rate
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
@@ -150,11 +149,8 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
     criterion = nn.MSELoss().cuda()
 
     for i in range(1, n_epoch+1):
-        epoch = 1
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
-            epoch = j+1
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
-            loss_total += loss
 
         cur_lr = cur_lr * rate_decay
         for param_group in encoder_optimizer.param_groups:
@@ -162,8 +158,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
         for param_group in decoder_optimizer.param_groups:
             param_group['lr'] = cur_lr
 
-        print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
-        loss_total = 0
+        print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss))
 
 
 def extract_feature(encoder, datloader, max_length, feat_dim):
