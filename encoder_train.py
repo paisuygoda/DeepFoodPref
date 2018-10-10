@@ -140,11 +140,8 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     return lossval / max_length
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1000, plot_every=100, learning_rate=0.01):
+def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, plot_every=100, learning_rate=0.01):
     start = time.time()
-    plot_losses = []
-    print_loss_total = 0  # Reset every print_every
-    plot_loss_total = 0  # Reset every plot_every
     loss_total = 0
     cur_lr = learning_rate
 
@@ -153,24 +150,11 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1
     criterion = nn.MSELoss().cuda()
 
     for i in range(1, n_epoch+1):
-        epochstart = time.time()
         epoch = 1
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
             epoch = j+1
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
-            print_loss_total += loss
-            plot_loss_total += loss
             loss_total += loss
-
-            if epoch % print_every == 0:
-                print_loss_avg = print_loss_total / print_every
-                print_loss_total = 0
-                print('%s (%d%%) %.4f' % (timeSince(epochstart, epoch / (len(dataloader) + 1)), epoch / (len(dataloader) + 1) * 100, print_loss_avg))
-
-            if epoch % plot_every == 0:
-                plot_loss_avg = plot_loss_total / plot_every
-                plot_losses.append(plot_loss_avg)
-                plot_loss_total = 0
 
         cur_lr = cur_lr * 0.9
         for param_group in encoder_optimizer.param_groups:
@@ -178,7 +162,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1
         for param_group in decoder_optimizer.param_groups:
             param_group['lr'] = cur_lr
 
-        print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
+        print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
         loss_total = 0
 
 
@@ -213,7 +197,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, print_every=100, learning_rate=param.lr)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, learning_rate=param.lr)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
