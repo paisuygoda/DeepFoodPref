@@ -52,6 +52,7 @@ def get_parser():
     parser.add_argument('--batchSize', default=128, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
     parser.add_argument('--epoch', default=10, type=int)
+    parser.add_argument('--lr', default=0.01, type=float)
     return parser
 
 
@@ -139,12 +140,13 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     return lossval / max_length
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1000, plot_every=100, learning_rate=0.1):
+def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1000, plot_every=100, learning_rate=0.01):
     start = time.time()
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
     loss_total = 0
+    cur_lr = learning_rate
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
@@ -153,15 +155,12 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1
     for i in range(1, n_epoch+1):
         epochstart = time.time()
         epoch = 1
-        valid_epoch = 0
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
             epoch = j+1
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
             print_loss_total += loss
             plot_loss_total += loss
-            if loss < 10000.0:
-                loss_total += loss
-                valid_epoch += 1
+            loss_total += loss
 
             if epoch % print_every == 0:
                 print_loss_avg = print_loss_total / print_every
@@ -173,10 +172,14 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, print_every=1
                 plot_losses.append(plot_loss_avg)
                 plot_loss_total = 0
 
-        if valid_epoch > 0:
-            print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
-            loss_total = 0
-    # showPlot(plot_losses)
+        cur_lr = cur_lr * 0.9
+        for param_group in encoder_optimizer.param_groups:
+            param_group['lr'] = cur_lr
+        for param_group in decoder_optimizer.param_groups:
+            param_group['lr'] = cur_lr
+
+        print('End of epoch... %s (%d%%) \nLoss: %.4f' % (timeSince(start, i / n_epoch), i / n_epoch * 100, loss_total/epoch))
+        loss_total = 0
 
 
 def extract_feature(encoder, datloader, max_length, feat_dim):
@@ -210,7 +213,7 @@ if __name__ == '__main__':
     dataset = FoodSequenceDataset()
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, print_every=100)
+    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, print_every=100, learning_rate=param.lr)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
