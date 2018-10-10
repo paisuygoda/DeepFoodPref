@@ -18,12 +18,11 @@ import math
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 import matplotlib.ticker as ticker
-import numpy as np
 
 def asMinutes(s):
     m = math.floor(s / 60)
     s -= m * 60
-    return '%dm %ds' % (m, s)
+    return '%dm %2ds' % (m, s)
 
 
 def timeSince(since, percent):
@@ -51,8 +50,8 @@ def get_parser():
     parser.add_argument('--featDim', default=128, type=int)
     parser.add_argument('--batchSize', default=128, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
-    parser.add_argument('--epoch', default=10, type=int)
-    parser.add_argument('--lr', default=0.01, type=float)
+    parser.add_argument('--epoch', default=200, type=int)
+    parser.add_argument('--lr', default=0.1, type=float)
     parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
 
