@@ -101,7 +101,7 @@ class DecoderLSTM(nn.Module):
         return output, hidden, pred
 
 
-def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=9):
+def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=9, numnut=31):
 
     batch_size = original_tensor.size()[0]
     encoder_optimizer.zero_grad()
@@ -124,25 +124,20 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
         decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
         decoder_input = decoder_output.detach()  # detach from history as input
 
-        addloss = criterion(pred.view(batch_size, 31),
-                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
+        addloss = criterion(pred.view(batch_size, numnut),
+                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, numnut).float(), requires_grad=False))
 
-        # if addloss > 1.0:
-        #     print(addloss)
         loss += addloss
 
     lossval = loss.data.cpu().numpy()
-    if lossval < 10000.0:
-        loss.backward()
-        encoder_optimizer.step()
-        decoder_optimizer.step()
+    loss.backward()
+    encoder_optimizer.step()
+    decoder_optimizer.step()
 
     return lossval / max_length
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95):
-    start = time.time()
-    loss_total = 0
+def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95, numnut=31):
     cur_lr = learning_rate
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
@@ -151,7 +146,7 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
 
     for i in range(1, n_epoch+1):
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
-            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
+            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length, numnut)
 
         cur_lr = cur_lr * rate_decay
         for param_group in encoder_optimizer.param_groups:
@@ -196,7 +191,8 @@ if __name__ == '__main__':
             filename = "data/subdata/user_meals_dataset_FM_days_"+str(day)+"_parts_"+str(part)+"_nut_31.p"
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
-            finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr, rate_decay=param.rateDecay)
+            finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part,
+                                    learning_rate=param.lr, rate_decay=param.rateDecay, numnut=4)
             print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}".format(finalloss))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_"+str(day)+"_days_"+str(parts)+"_parts_all_nut.p")
@@ -207,7 +203,7 @@ if __name__ == '__main__':
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
             trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr,
-                        rate_decay=param.rateDecay)
+                        rate_decay=param.rateDecay, numnut=31)
             print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}".format(finalloss))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(
