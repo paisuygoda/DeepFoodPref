@@ -194,7 +194,7 @@ if __name__ == '__main__':
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
             finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part,
-                                    learning_rate=param.lr, rate_decay=param.rateDecay, numnut=4)
+                                    learning_rate=param.lr, rate_decay=param.rateDecay, numnut=31)
             print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}".format(finalloss),
                   timeSince(start, (((i * 3 + j) * 2) + 1) / 24))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
@@ -206,7 +206,7 @@ if __name__ == '__main__':
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
             trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr,
-                        rate_decay=param.rateDecay, numnut=31)
+                        rate_decay=param.rateDecay, numnut=4)
             print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}".format(finalloss),
                   timeSince(start, (((i * 3 + j) * 2) + 2) / 24))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
