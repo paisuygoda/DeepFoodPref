@@ -184,8 +184,10 @@ if __name__ == '__main__':
 
     parts = [1, 3, 6, 8]
     days = [1, 3, 7]
-    for part in parts:
-        for day in days:
+    start = time.time()
+
+    for i, part in enumerate(parts):
+        for j, day in enumerate(days):
             encoder_lstm = EncoderLSTM(31, param.featDim).cuda()
             decoder_lstm = DecoderLSTM(param.featDim, 31).cuda()
             filename = "data/subdata/user_meals_dataset_FM_days_"+str(day)+"_parts_"+str(part)+"_nut_31.p"
@@ -193,7 +195,8 @@ if __name__ == '__main__':
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
             finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part,
                                     learning_rate=param.lr, rate_decay=param.rateDecay, numnut=4)
-            print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}".format(finalloss))
+            print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}".format(finalloss),
+                  timeSince(start, (((i * 3 + j) * 2) + 1) / 24))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_"+str(day)+"_days_"+str(parts)+"_parts_all_nut.p")
 
@@ -204,7 +207,8 @@ if __name__ == '__main__':
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
             trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr,
                         rate_decay=param.rateDecay, numnut=31)
-            print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}".format(finalloss))
+            print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}".format(finalloss),
+                  timeSince(start, (((i * 3 + j) * 2) + 2) / 24))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(
                                 parts) + "_parts_major_nut.p")
