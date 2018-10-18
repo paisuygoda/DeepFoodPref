@@ -170,12 +170,11 @@ def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/s
                                                      encoder_hidden)
         features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
-            user_cpu = user.cpu()
             day_cpu = day.cpu()
-            if user_cpu in feature_dict:
-                feature_dict[user_cpu].append((day_cpu, feature))
+            if user in feature_dict:
+                feature_dict[user].append((day_cpu, feature))
             else:
-                feature_dict[user_cpu] = [(day_cpu, feature)]
+                feature_dict[user] = [(day_cpu, feature)]
 
     with open(outputfile, mode='wb') as f:
         pickle.dump(feature_dict, f)
