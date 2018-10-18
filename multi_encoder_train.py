@@ -170,7 +170,7 @@ def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/s
                                                      encoder_hidden)
         features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
-            day_cpu = day.cpu()
+            day_cpu = day.cpu().numpy()
             if user in feature_dict:
                 feature_dict[user].append((day_cpu, feature))
             else:
@@ -196,7 +196,7 @@ if __name__ == '__main__':
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
             finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part,
                                     learning_rate=param.lr, rate_decay=param.rateDecay, numnut=31)
-            print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}\t".format(finalloss),
+            print("day: ", day, "\tparts: ", part, "\tall nut\t\tFinal Loss: {0:.4f}\t".format(finalloss),
                   timeSince(start, (((i * 3 + j) * 2) + 1) / 24))
             extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_"+str(day)+"_days_"+str(part)+"_parts_all_nut.p")
