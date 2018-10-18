@@ -157,10 +157,11 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
     return loss
 
 
-def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/subdata/foodpref.p"):
+def extract_feature(encoder, max_length, feat_dim, outputfile="data/subdata/foodpref.p"):
 
     feature_dict = {}
-    for j, (user_id, firstday, original_tensor) in enumerate(datloader):
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=4)
+    for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         encoder_hidden = False
@@ -197,7 +198,7 @@ if __name__ == '__main__':
                                     learning_rate=param.lr, rate_decay=param.rateDecay, numnut=31)
             print("day: ", day, "\tparts: ", part, "\tall nut\tFinal Loss: {0:.4f}\t".format(finalloss),
                   timeSince(start, (((i * 3 + j) * 2) + 1) / 24))
-            extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
+            extract_feature(encoder_lstm, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_"+str(day)+"_days_"+str(part)+"_parts_all_nut.p")
 
             encoder_lstm = EncoderLSTM(4, param.featDim).cuda()
@@ -209,7 +210,7 @@ if __name__ == '__main__':
                         rate_decay=param.rateDecay, numnut=4)
             print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}\t".format(finalloss),
                   timeSince(start, (((i * 3 + j) * 2) + 2) / 24))
-            extract_feature(encoder_lstm, dataloader, day*part, param.featDim,
+            extract_feature(encoder_lstm, day*part, param.featDim,
                             outputfile="results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(
                                 part) + "_parts_major_nut.p")
 
