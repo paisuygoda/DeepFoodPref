@@ -147,6 +147,8 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
     for i in range(1, n_epoch+1):
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length, numnut)
+            if loss > 0:
+                return 9999.0
 
         cur_lr = cur_lr * rate_decay
         for param_group in encoder_optimizer.param_groups:
@@ -225,7 +227,7 @@ if __name__ == '__main__':
             filename = "data/subdata/user_meals_dataset_FM_days_" + str(day) + "_parts_" + str(part) + "_nut_4.p"
             dataset = FoodSequenceDataset(csv_file=filename)
             dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
-            trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr,
+            finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, day*part, learning_rate=param.lr,
                         rate_decay=param.rateDecay, numnut=4)
             print("day: ", day, "\tparts: ", part, "\tonly major\tFinal Loss: {0:.4f}\t".format(finalloss),
                   timeSince(start, (((i * 3 + j) * 2) + 2) / 24))
