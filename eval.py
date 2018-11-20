@@ -51,7 +51,7 @@ def get_parser():
     parser.add_argument('--batchSize', default=512, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
     parser.add_argument('--epoch', default=100, type=int)
-    parser.add_argument('--lr', default=0.1, type=float)
+    parser.add_argument('--lr', default=0.001, type=float)
     parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
 
@@ -67,7 +67,6 @@ def split_dataloader(file, split_rate, batch_size):
         (gender, age, birthday) = att[user_id]
 
         if gender == 0 or age == 0:
-            print("skipped user: ", skipcount)
             skipcount += 1
             continue
         gender -= 1
@@ -77,6 +76,8 @@ def split_dataloader(file, split_rate, batch_size):
                 train_list.append((user_id, day, feat, gender, age))
             else:
                 val_list.append((user_id, day, feat, gender, age))
+
+    print("skipped user: ", skipcount)
 
     train_dataset = FoodPrefDataset(train_list)
     val_dataset = FoodPrefDataset(val_list)
@@ -193,8 +194,8 @@ def val(eval, dataloader):
         age_count += age.size(0)
         age_correct += (predicted == age).sum()
 
-    gender_correct /= gender_count
-    age_correct /= age_count
+    gender_correct = int(gender_correct) / int(gender_count) * 100
+    age_correct = int(age_correct) / int(age_count) * 100
 
     return gender_correct.cpu().numpy(), age_correct.cpu().numpy()
 
