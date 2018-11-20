@@ -48,7 +48,7 @@ def get_parser():
     parser.add_argument('--cuda', default=True, type=bool)
     parser.add_argument('-g', '--gpu', default=0, nargs='+', type=int)
     parser.add_argument('--featDim', default=128, type=int)
-    parser.add_argument('--batchSize', default=128, type=int)
+    parser.add_argument('--batchSize', default=512, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
     parser.add_argument('--epoch', default=200, type=int)
     parser.add_argument('--lr', default=0.1, type=float)
@@ -132,14 +132,12 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     return lossval / max_length
 
 
-def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95):
+def trainEpochs(eval, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95):
     start = time.time()
     cur_lr = learning_rate
 
-    gender_classifier = nn.Linear()
-    encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
-    decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
-    criterion = nn.MSELoss().cuda()
+    optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
+    criterion = nn.CrossEntropyLoss().cuda()
 
     for i in range(1, n_epoch+1):
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
@@ -184,7 +182,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
     eval = Classifier(feat_size)
 
-    trainEpochs(encoder_lstm, decoder_lstm, dataloader, param.epoch, param.maxLength, learning_rate=param.lr, rate_decay=param.rateDecay)
+    trainEpochs(eval, dataloader, param.epoch, param.maxLength, learning_rate=param.lr, rate_decay=param.rateDecay)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 

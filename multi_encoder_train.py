@@ -48,7 +48,7 @@ def get_parser():
     parser.add_argument('--cuda', default=True, type=bool)
     parser.add_argument('-g', '--gpu', default=0, nargs='+', type=int)
     parser.add_argument('--featDim', default=128, type=int)
-    parser.add_argument('--batchSize', default=128, type=int)
+    parser.add_argument('--batchSize', default=512, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
     parser.add_argument('--epoch', default=200, type=int)
     parser.add_argument('--lr', default=0.1, type=float)
