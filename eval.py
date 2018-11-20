@@ -50,7 +50,7 @@ def get_parser():
     parser.add_argument('--featDim', default=128, type=int)
     parser.add_argument('--batchSize', default=512, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
-    parser.add_argument('--epoch', default=200, type=int)
+    parser.add_argument('--epoch', default=100, type=int)
     parser.add_argument('--lr', default=0.1, type=float)
     parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
@@ -93,35 +93,17 @@ class Classifier(nn.Module):
         return gender_guess, age_guess
 
 
-def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=9):
+def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
 
-    batch_size = original_tensor.size()[0]
-    encoder_optimizer.zero_grad()
-    decoder_optimizer.zero_grad()
-
-    original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
-
+    batch_size = feat.size()[0]
+    optimizer.zero_grad()
     loss = 0.0
 
-    encoder_hidden = False
-    for i in range(max_length):
-        encoder.lstm.flatten_parameters()
-        encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(), encoder_hidden)
+    gender_guess, age_guess = eval(feat)
 
-    decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128)), requires_grad=False).cuda()
-    decoder_hidden = encoder_hidden
+    if gender
+    gender_loss = gender_criterion(gender_guess, gender)
 
-    for di in range(max_length):
-        decoder.lstm.flatten_parameters()
-        decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
-        decoder_input = decoder_output.detach()  # detach from history as input
-
-        addloss = criterion(pred.view(batch_size, 31),
-                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
-
-        # if addloss > 1.0:
-        #     print(addloss)
-        loss += addloss
 
     lossval = loss.data.cpu().numpy()
     if lossval < 10000.0:
@@ -132,24 +114,24 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     return lossval / max_length
 
 
-def trainEpochs(eval, dataloader, n_epoch, max_length, learning_rate=0.01, rate_decay=0.95):
+def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
     start = time.time()
     cur_lr = learning_rate
 
-    optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
-    criterion = nn.CrossEntropyLoss().cuda()
+    optimizer = optim.Adam(eval.parameters(), lr=learning_rate)
+    gender_criterion = nn.CrossEntropyLoss().cuda()
+    age_criterion = nn.CrossEntropyLoss().cuda()
 
     for i in range(1, n_epoch+1):
-        for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
-            loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length)
+        for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
+            loss = train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion)
 
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = cur_lr
         cur_lr = cur_lr * rate_decay
-        for param_group in encoder_optimizer.param_groups:
-            param_group['lr'] = cur_lr
-        for param_group in decoder_optimizer.param_groups:
-            param_group['lr'] = cur_lr
 
-        print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss))
+        if (i % 10 == 0) or i < 5:
+            print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss))
 
 
 def extract_feature(encoder, datloader, max_length, feat_dim):
@@ -182,7 +164,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
     eval = Classifier(feat_size)
 
-    trainEpochs(eval, dataloader, param.epoch, param.maxLength, learning_rate=param.lr, rate_decay=param.rateDecay)
+    trainEpochs(eval, dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
     extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 

@@ -187,23 +187,8 @@ if __name__ == '__main__':
     days = [1, 3, 7]
     start = time.time()
 
-    min_loss = 99999.0
-    min_i = -1
-    for i in range(1000):
-        torch.backends.cudnn.deterministic = True
-        torch.manual_seed(i)
-        filename = "data/subdata/user_meals_dataset_FM_days_3_parts_3_nut_31.p"
-        dataset = FoodSequenceDataset(csv_file=filename)
-        dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
-        encoder_lstm = EncoderLSTM(31, param.featDim).cuda()
-        decoder_lstm = DecoderLSTM(param.featDim, 31).cuda()
-        finalloss = trainEpochs(encoder_lstm, decoder_lstm, dataloader, 5, 3 * 3,
-                                learning_rate=param.lr, rate_decay=param.rateDecay, numnut=31)
-        if finalloss < min_loss:
-            min_loss = finalloss
-            min_i = i
-
-    print(min_i, min_loss)
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(5)
 
     for i, part in enumerate(parts):
         for j, day in enumerate(days):
