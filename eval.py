@@ -197,7 +197,7 @@ def val(eval, dataloader):
     gender_correct = int(gender_correct) / int(gender_count) * 100
     age_correct = int(age_correct) / int(age_count) * 100
 
-    return gender_correct.cpu().numpy(), age_correct.cpu().numpy()
+    return gender_correct, age_correct
 
 if __name__ == '__main__':
     parser = get_parser()
