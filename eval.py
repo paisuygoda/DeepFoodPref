@@ -151,9 +151,6 @@ def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
             param_group['lr'] = cur_lr
         cur_lr = cur_lr * rate_decay
 
-        if (i % 10 == 0) or i < 5:
-            print('Epoch %3d: %s (%d%%) \tLoss: %.4f' % (i, timeSince(start, i / n_epoch), i / n_epoch * 100, loss))
-
 
 def extract_feature(encoder, datloader, max_length, feat_dim):
 
@@ -207,13 +204,25 @@ def single_eval(feats, message):
 
     trainEpochs(eval, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
-    print("--- Finished learning ---")
     gender_accuracy, age_accuracy = val(eval, val_dataloader)
     print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t\t", age_accuracy)
+    print("\n---\n")
 
 if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
 
-    single_eval('results/preffeat_LSTM_FM_3_days_3_parts_all_nut.p', "3day-3day-all")
+    parts = [1, 3, 6, 8]
+    days = [1, 3, 7]
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(5)
 
+    for i, part in enumerate(parts):
+        for j, day in enumerate(days):
+            filename = "results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(part) + "_parts_all_nut.p"
+            message = str(day) + " days, " + str(part) + "parts, all"
+            single_eval(filename, message)
+
+            filename = "results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(part) + "_parts_major_nut.p"
+            message = str(day) + " days, " + str(part) + "parts, major"
+            single_eval(filename, message)
