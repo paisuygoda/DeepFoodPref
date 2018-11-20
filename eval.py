@@ -55,18 +55,40 @@ def get_parser():
     parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
 
+def split_dataloader(file, split_rate, batch_size):
+    with open(file, mode='rb') as f:
+        base = pickle.load(f)
+    with open('data/subdata/user_attribute.p', mode='rb') as f:
+        att = pickle.load(f)
+    train_list = []
+    val_list = []
+
+    for user_id, d_list in base.items():
+        (gender, age, birthday) = att[user_id]
+        skipcount = 0
+        if gender == 0 or age == 0:
+            print("skipped user: ", skipcount)
+            skipcount += 1
+            continue
+        for (day, feat) in d_list:
+            if np.random.rand() < split_rate:
+                train_list.append((user_id, day, feat, gender, age))
+            else:
+                val_list.append((user_id, day, feat, gender, age))
+
+    train_dataset = FoodPrefDataset(train_list)
+    val_dataset = FoodPrefDataset(val_list)
+    feat_size = train_dataset[0][0].shape()[1]
+
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+
+    return train_dataloader, val_dataloader, feat_size
+
 
 class FoodPrefDataset(Dataset):
-    def __init__(self, csv_file='results/preffeat_LSTM_FM_3_days_3_parts_all_nut.p'):
-        with open(csv_file, mode='rb') as f:
-            self.base = pickle.load(f)
-        with open('data/subdata/user_attribute.p', mode='rb') as f:
-            self.att = pickle.load(f)
-        self.ds = []
-        for key, d_list in self.base.items():
-            (gender, age, birthday) = self.att[key]
-            for (day, feat) in d_list:
-                self.ds.append((key, day, feat, gender, age))
+    def __init__(self, file):
+        self.ds = file
 
     def __len__(self):
         return len(self.ds)
@@ -95,24 +117,19 @@ class Classifier(nn.Module):
 
 def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
 
-    batch_size = feat.size()[0]
     optimizer.zero_grad()
-    loss = 0.0
 
     gender_guess, age_guess = eval(feat)
 
-    if gender:
-        gender_loss = gender_criterion(gender_guess, gender)
+    gender_loss = gender_criterion(gender_guess, gender)
+    age_loss = age_criterion(age_guess, age)
 
-    """
-    lossval = loss.data.cpu().numpy()
-    if lossval < 10000.0:
-        loss.backward()
-        encoder_optimizer.step()
-        decoder_optimizer.step()
-    """
+    loss = gender_loss + age_loss
 
-    return gender_loss
+    loss.backward()
+    optimizer.step()
+
+    return loss.data.cpu().numpy()
 
 
 def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
@@ -156,16 +173,39 @@ def extract_feature(encoder, datloader, max_length, feat_dim):
     with open("data/subdata/food_pref.p", mode='wb') as f:
         pickle.dump(feature_dict, f)
 
+
+def val(eval, dataloader):
+
+    gender_correct = 0
+    age_correct = 0
+    gender_count = 0
+    age_count = 0
+    for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
+        gender_guess, age_guess = eval(feat)
+
+        _, predicted = torch.max(gender_guess.data, 1)
+        gender_count += gender.size(0)
+        gender_correct += (predicted == gender).sum()
+
+        _, predicted = torch.max(age_guess.data, 1)
+        age_count += age.size(0)
+        age_correct += (predicted == age).sum()
+
+    gender_correct /= gender_count
+    age_correct /= age_count
+
+    return gender_correct, age_correct
+
 if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
 
-    dataset = FoodPrefDataset('results/preffeat_LSTM_FM_3_days_3_parts_all_nut.p')
-    feat_size = dataset[0][0].shape()[1]
-    dataloader = DataLoader(dataset, batch_size=param.batchSize, shuffle=True, num_workers=4)
+    train_dataloader, val_dataloader, feat_size = split_dataloader('results/preffeat_LSTM_FM_3_days_3_parts_all_nut.p', 0.7, param.batchSize)
     eval = Classifier(feat_size)
 
-    trainEpochs(eval, dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
+    trainEpochs(eval, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
-    #extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
+    print("--- Finished learning ---")
+    gender_accuracy, age_accuracy = val(eval, val_dataloader)
+    print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t", age_accuracy)
 
