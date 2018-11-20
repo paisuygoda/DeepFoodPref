@@ -196,7 +196,7 @@ def val(eval, dataloader):
     gender_correct /= gender_count
     age_correct /= age_count
 
-    return gender_correct, age_correct
+    return gender_correct.cpu().numpy(), age_correct.cpu().numpy()
 
 if __name__ == '__main__':
     parser = get_parser()
@@ -209,5 +209,5 @@ if __name__ == '__main__':
 
     print("--- Finished learning ---")
     gender_accuracy, age_accuracy = val(eval, val_dataloader)
-    print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t", age_accuracy)
+    print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t\t", age_accuracy)
 
