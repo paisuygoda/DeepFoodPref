@@ -101,17 +101,18 @@ def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
 
     gender_guess, age_guess = eval(feat)
 
-    if gender
-    gender_loss = gender_criterion(gender_guess, gender)
+    if gender:
+        gender_loss = gender_criterion(gender_guess, gender)
 
-
+    """
     lossval = loss.data.cpu().numpy()
     if lossval < 10000.0:
         loss.backward()
         encoder_optimizer.step()
         decoder_optimizer.step()
+    """
 
-    return lossval / max_length
+    return gender_loss
 
 
 def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
@@ -166,5 +167,5 @@ if __name__ == '__main__':
 
     trainEpochs(eval, dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
-    extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
+    #extract_feature(encoder_lstm, dataloader, param.maxLength, param.featDim)
 
