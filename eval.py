@@ -199,11 +199,10 @@ def val(eval, dataloader):
 
     return gender_correct, age_correct
 
-if __name__ == '__main__':
-    parser = get_parser()
-    param = parser.parse_args()
 
-    train_dataloader, val_dataloader, feat_size = split_dataloader('results/preffeat_LSTM_FM_3_days_3_parts_all_nut.p', 0.7, param.batchSize)
+def single_eval(feats, message):
+    print(message)
+    train_dataloader, val_dataloader, feat_size = split_dataloader(feats, 0.7, param.batchSize)
     eval = Classifier(feat_size)
 
     trainEpochs(eval, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
@@ -211,4 +210,10 @@ if __name__ == '__main__':
     print("--- Finished learning ---")
     gender_accuracy, age_accuracy = val(eval, val_dataloader)
     print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t\t", age_accuracy)
+
+if __name__ == '__main__':
+    parser = get_parser()
+    param = parser.parse_args()
+
+    single_eval('results/preffeat_LSTM_FM_3_days_3_parts_all_nut.p', "3day-3day-all")
 
