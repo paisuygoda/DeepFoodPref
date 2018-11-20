@@ -147,8 +147,6 @@ def trainEpochs(encoder, decoder, dataloader, n_epoch, max_length, learning_rate
     for i in range(1, n_epoch+1):
         for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
             loss = train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length, numnut)
-            if loss > 0:
-                return 9999.0
 
         cur_lr = cur_lr * rate_decay
         for param_group in encoder_optimizer.param_groups:
