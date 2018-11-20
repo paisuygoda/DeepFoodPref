@@ -77,8 +77,6 @@ def split_dataloader(file, split_rate, batch_size):
             else:
                 val_list.append((user_id, day, feat, gender, age))
 
-    print("skipped user: ", skipcount)
-
     train_dataset = FoodPrefDataset(train_list)
     val_dataset = FoodPrefDataset(val_list)
     feat_size = len(train_dataset[0][0])
