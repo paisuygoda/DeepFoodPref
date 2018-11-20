@@ -62,14 +62,16 @@ def split_dataloader(file, split_rate, batch_size):
         att = pickle.load(f)
     train_list = []
     val_list = []
-
+    skipcount = 0
     for user_id, d_list in base.items():
         (gender, age, birthday) = att[user_id]
-        skipcount = 0
+
         if gender == 0 or age == 0:
             print("skipped user: ", skipcount)
             skipcount += 1
             continue
+        gender -= 1
+        age -= 1
         for (day, feat) in d_list:
             if np.random.rand() < split_rate:
                 train_list.append((user_id, day, feat, gender, age))
@@ -78,7 +80,7 @@ def split_dataloader(file, split_rate, batch_size):
 
     train_dataset = FoodPrefDataset(train_list)
     val_dataset = FoodPrefDataset(val_list)
-    feat_size = train_dataset[0][0].shape()[1]
+    feat_size = len(train_dataset[0][0])
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
