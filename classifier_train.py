@@ -72,15 +72,19 @@ class FoodSequenceDataset(Dataset):
     def __init__(self, csv_file='data/subdata/user_meals_dataset_FM.p'):
         with open(csv_file, mode='rb') as f:
             self.ds = pickle.load(f)
+        with open('data/subdata/user_attribute.p', mode='rb') as f:
+            self.att = pickle.load(f)
 
     def __len__(self):
         return len(self.ds)
 
     def __getitem__(self, idx):
         user_id = self.ds[idx][0]
+        gender = self.att[user_id][0]
+        age = self.att[user_id][1]
         firstday = self.ds[idx][1]
         nutrition_log = self.ds[idx][2]
-        return user_id, firstday, nutrition_log
+        return user_id, firstday, nutrition_log, gender, age
 
 
 class E2E(nn.Module):
@@ -268,6 +272,6 @@ if __name__ == '__main__':
 
             # MLP3層版も欲しい
             progress = (parts_sum[i] * 11 + days_sum[j] * parts[i]) / (11 * 18)
-            filename = "data/subdata/classifier/" + str(days) + "_days_" + str(parts) + "_parts_31"
+            filename = str(days) + "_days_" + str(parts) + "_parts_31"
             message = str(day) + " days, " + str(part) + "parts, MLP"
             single_eval(filename, message, 31, param, start, progress, True, part*day)
