@@ -3,9 +3,10 @@ import numpy as np
 import math
 
 
-def make_dataset_forcemeals(user_daily_meals, train_id, parts=3, days=3, only_major=False):
+def make_dataset_forcemeals(user_daily_meals, train_id, val_id, parts=3, days=3, only_major=False):
     final_train_dataset = False
     final_val_dataset = False
+    final_test_dataset = False
     timeband = 1 / parts
     count = 0
     if only_major:
@@ -43,11 +44,16 @@ def make_dataset_forcemeals(user_daily_meals, train_id, parts=3, days=3, only_ma
                         final_train_dataset = [(user_id, meals_list[days-1][0], meals_list[days-1][1])]
                     else:
                         final_train_dataset.append((user_id, meals_list[days-1][0], meals_list[days-1][1]))
-                else:
+                elif user_id in val_id:
                     if type(final_val_dataset) != list:
                         final_val_dataset = [(user_id, meals_list[days-1][0], meals_list[days-1][1])]
                     else:
                         final_val_dataset.append((user_id, meals_list[days-1][0], meals_list[days-1][1]))
+                else:
+                    if type(final_test_dataset) != list:
+                        final_test_dataset = [(user_id, meals_list[days-1][0], meals_list[days-1][1])]
+                    else:
+                        final_test_dataset.append((user_id, meals_list[days-1][0], meals_list[days-1][1]))
 
             meals_list = meals_list[:-1]
             meals_list.insert(0, False)
@@ -59,23 +65,28 @@ def make_dataset_forcemeals(user_daily_meals, train_id, parts=3, days=3, only_ma
         pickle.dump(final_val_dataset, f)
 
 if __name__ == '__main__':
-    train_max = 100
+    train_max = 95
+    val_max = 15
     with open('data/subdata/user_daily_meals.p', mode='rb') as f:
         user_daily_meals = pickle.load(f)
-    with open('data/subdata/serve_by_user/user_ids.p', mode='rb') as f:
+    with open('data/subdata/classifier/user_ids.p', mode='rb') as f:
         user_ids = pickle.load(f)
     train_id = []
     val_id = []
+    test_id = []
     for user_id in user_ids:
-        if np.random.rand() < 0.8 and len(train_id) < train_max:
+        r = np.random.rand()
+        if r < 0.7 and len(train_id) < train_max:
             train_id.append(user_id)
-        else:
+        elif r < 0.85 and len(val_id) < val_max:
             val_id.append(user_id)
-    print(len(train_id), len(val_id))
+        else:
+            test_id.append(user_id)
+    print(len(train_id), len(val_id), len(test_id))
 
     parts = [1, 3, 6, 8]
     days = [1, 3, 7]
     for part in parts:
         for day in days:
-            make_dataset_forcemeals(user_daily_meals, train_id, part, day, False)
-            make_dataset_forcemeals(user_daily_meals, train_id, part, day, True)
+            make_dataset_forcemeals(user_daily_meals, train_id, val_id, part, day, False)
+            make_dataset_forcemeals(user_daily_meals, train_id, val_id, part, day, True)

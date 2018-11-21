@@ -231,10 +231,10 @@ if __name__ == '__main__':
 
     for i, part in enumerate(parts):
         for j, day in enumerate(days):
-            filename = "results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(part) + "_parts_all_nut.p"
+            filename = "results/classifier/" + str(day) + "_days_" + str(part) + "_parts_all_nut.p"
             message = str(day) + " days, " + str(part) + "parts, all"
             single_eval(filename, message)
 
-            filename = "results/preffeat_LSTM_FM_" + str(day) + "_days_" + str(part) + "_parts_major_nut.p"
+            filename = "results/classifier/" + str(day) + "_days_" + str(part) + "_parts_major_nut.p"
             message = str(day) + " days, " + str(part) + "parts, major"
             single_eval(filename, message)
