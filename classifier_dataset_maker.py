@@ -63,6 +63,8 @@ def make_dataset_forcemeals(user_daily_meals, train_id, val_id, parts=3, days=3,
         pickle.dump(final_train_dataset, f)
     with open("data/subdata/classifier/" + str(days) + "_days_" + str(parts) + "_parts_" + str(nut_num) + "_val.p", "wb") as f:
         pickle.dump(final_val_dataset, f)
+    with open("data/subdata/classifier/" + str(days) + "_days_" + str(parts) + "_parts_" + str(nut_num) + "_test.p", "wb") as f:
+        pickle.dump(final_test_dataset, f)
 
 if __name__ == '__main__':
     train_max = 95
