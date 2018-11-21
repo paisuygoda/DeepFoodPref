@@ -67,7 +67,7 @@ if __name__ == '__main__':
     train_id = []
     val_id = []
     for user_id in user_ids:
-        if np.random.rand() > 0.8 and len(train_id) < 100:
+        if np.random.rand() < 0.8 and len(train_id) < train_max:
             train_id.append(user_id)
         else:
             val_id.append(user_id)
