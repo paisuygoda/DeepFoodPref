@@ -236,7 +236,7 @@ def val(eval, dataloader):
 def single_eval(file, message, nut, param, start, progress, isMLP, max_length):
     print(message)
     train_dataloader, val_dataloader, test_dataloader = tri_dataloader("data/subdata/classifier/" + file, param.batchSize)
-    network = E2E(nut, param.featDim, isMLP, max_length)
+    network = E2E(nut, param.featDim, isMLP, max_length).cuda()
 
     loss = trainEpochs(network, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
