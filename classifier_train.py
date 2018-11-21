@@ -80,8 +80,8 @@ class FoodSequenceDataset(Dataset):
 
     def __getitem__(self, idx):
         user_id = self.ds[idx][0]
-        gender = self.att[user_id][0]
-        age = self.att[user_id][1]
+        gender = self.att[user_id][0] - 1
+        age = self.att[user_id][1] - 1
         firstday = self.ds[idx][1]
         nutrition_log = self.ds[idx][2]
         return user_id, firstday, nutrition_log, gender, age
@@ -152,7 +152,7 @@ class EncoderLSTM(nn.Module):
         return output, hidden
 
 
-def train(original_tensor, network, optimizer, gender_criterion, age_criterion):
+def train(original_tensor, network, gender, age, optimizer, gender_criterion, age_criterion):
 
     optimizer.zero_grad()
     batch_size = original_tensor.size()[0]
@@ -178,30 +178,27 @@ def trainEpochs(network, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9
     optimizer = optim.Adam(network.parameters(), lr=learning_rate)
     gender_criterion = nn.CrossEntropyLoss().cuda()
     age_criterion = nn.CrossEntropyLoss().cuda()
+    loss = 0.0
 
     for i in range(1, n_epoch+1):
-        for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
-            loss = train(original_tensor, network, optimizer, gender_criterion, age_criterion)
+        for j, (user_id, firstday, original_tensor, gender, age) in enumerate(dataloader):
+            loss += train(original_tensor, network, gender, age, optimizer, gender_criterion, age_criterion)
 
         cur_lr = cur_lr * rate_decay
         for param_group in optimizer.param_groups:
             param_group['lr'] = cur_lr
 
-    return loss
+    return loss / n_epoch
 
 
-def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="results/dummy.p"):
+def extract_feature(network, datloader, max_length, feat_dim, outputfile="results/dummy.p"):
 
     feature_dict = {}
     for j, (user_id, firstday, original_tensor) in enumerate(datloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
-        encoder_hidden = False
-        for i in range(max_length):
-            encoder.lstm.flatten_parameters()
-            encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(),
-                                                     encoder_hidden)
-        features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
+        _, hidden = network.encoder(original_variable)
+        features = hidden.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
             day_cpu = day.cpu().numpy()
             if user in feature_dict:
