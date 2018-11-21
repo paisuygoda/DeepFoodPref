@@ -114,7 +114,8 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     encoder_hidden = False
     for i in range(max_length):
         encoder.lstm.flatten_parameters()
-        encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(), encoder_hidden)
+        encoder_output, encoder_hidden = encoder(
+            torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(), encoder_hidden)
 
     decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128)), requires_grad=False).cuda()
     decoder_hidden = encoder_hidden

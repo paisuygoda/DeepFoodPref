@@ -56,36 +56,16 @@ def get_parser():
     return parser
 
 
-def split_dataloader(file, split_rate, batch_size):
-    with open(file, mode='rb') as f:
-        base = pickle.load(f)
-    with open('data/subdata/user_attribute.p', mode='rb') as f:
-        att = pickle.load(f)
-    train_list = []
-    val_list = []
-    skipcount = 0
-    for user_id, d_list in base.items():
-        (gender, age, birthday) = att[user_id]
-
-        if gender == 0 or age == 0:
-            skipcount += 1
-            continue
-        gender -= 1
-        age -= 1
-        for (day, feat) in d_list:
-            if np.random.rand() < split_rate:
-                train_list.append((user_id, day, feat, gender, age))
-            else:
-                val_list.append((user_id, day, feat, gender, age))
-
-    train_dataset = FoodPrefDataset(train_list)
-    val_dataset = FoodPrefDataset(val_list)
-    feat_size = len(train_dataset[0][0])
+def tri_dataloader(file, batch_size):
+    train_dataset = FoodSequenceDataset(file + "_train.p")
+    val_dataset = FoodSequenceDataset(file + "_val.p")
+    test_dataset = FoodSequenceDataset(file + "_test.p")
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
-    return train_dataloader, val_dataloader, feat_size
+    return train_dataloader, val_dataloader, test_dataloader
 
 
 class FoodSequenceDataset(Dataset):
@@ -103,6 +83,26 @@ class FoodSequenceDataset(Dataset):
         return user_id, firstday, nutrition_log
 
 
+class E2E(nn.Module):
+    def __init__(self, input_size, hidden_size, isMLP, max_length):
+        super(E2E, self).__init__()
+        self.encoder = EncoderLSTM(input_size, hidden_size)
+        if isMLP:
+            self.classifier = MLP(hidden_size)
+        else:
+            self.classifier = Classifier(hidden_size)
+        self.max_length = max_length
+
+    def forward(self, input):
+        encoder_hidden = False
+        for i in range(self.max_length):
+            self.encoder.lstm.flatten_parameters()
+            encoder_output, encoder_hidden = self.encoder(torch.autograd.Variable(input.data.narrow(1, i, 1),
+                                                                                  requires_grad=False).cuda(), encoder_hidden)
+        gender_guess, age_guess = self.classifier(encoder_hidden)
+        return gender_guess, age_guess
+
+
 class Classifier(nn.Module):
     def __init__(self, input_size):
         super(Classifier, self).__init__()
@@ -116,10 +116,28 @@ class Classifier(nn.Module):
         return gender_guess, age_guess
 
 
+class MLP(nn.Module):
+    def __init__(self, input_size):
+        super(MLP, self).__init__()
+        self.linear1 = nn.Linear(input_size, input_size)
+        self.linear2 = nn.Linear(input_size, input_size)
+        self.linear3 = nn.Linear(input_size, input_size)
+        self.gender = nn.Linear(input_size, 2)
+        self.age = nn.Linear(input_size, 7)
+        self.user = nn.Linear(input_size, 100)
+
+    def forward(self, input):
+        mid_feat = self.linear1(input)
+        mid_feat = self.linear2(mid_feat)
+        mid_feat = self.linear3(mid_feat)
+        gender_guess = self.gender(mid_feat)
+        age_guess = self.age(mid_feat)
+        return gender_guess, age_guess
+
+
 class EncoderLSTM(nn.Module):
     def __init__(self, input_size, hidden_size):
         super(EncoderLSTM, self).__init__()
-        self.hidden_size = hidden_size
         self.lstm = nn.LSTM(input_size, hidden_size)
 
     def forward(self, input, hidden=False):
@@ -130,11 +148,14 @@ class EncoderLSTM(nn.Module):
         return output, hidden
 
 
-def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
+def train(original_tensor, network, optimizer, gender_criterion, age_criterion):
 
     optimizer.zero_grad()
+    batch_size = original_tensor.size()[0]
+    original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
+    loss = 0.0
 
-    gender_guess, age_guess = eval(feat)
+    gender_guess, age_guess = network(original_variable)
 
     gender_loss = gender_criterion(gender_guess, gender)
     age_loss = age_criterion(age_guess, age)
@@ -147,24 +168,25 @@ def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
     return loss.data.cpu().numpy()
 
 
-def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
-    start = time.time()
+def trainEpochs(network, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
     cur_lr = learning_rate
 
-    optimizer = optim.Adam(eval.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(network.parameters(), lr=learning_rate)
     gender_criterion = nn.CrossEntropyLoss().cuda()
     age_criterion = nn.CrossEntropyLoss().cuda()
 
     for i in range(1, n_epoch+1):
-        for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
-            loss = train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion)
+        for j, (user_id, firstday, original_tensor) in enumerate(dataloader):
+            loss = train(original_tensor, network, optimizer, gender_criterion, age_criterion)
 
+        cur_lr = cur_lr * rate_decay
         for param_group in optimizer.param_groups:
             param_group['lr'] = cur_lr
-        cur_lr = cur_lr * rate_decay
+
+    return loss
 
 
-def extract_feature(encoder, datloader, max_length, feat_dim):
+def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="results/dummy.p"):
 
     feature_dict = {}
     for j, (user_id, firstday, original_tensor) in enumerate(datloader):
@@ -177,12 +199,13 @@ def extract_feature(encoder, datloader, max_length, feat_dim):
                                                      encoder_hidden)
         features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
+            day_cpu = day.cpu().numpy()
             if user in feature_dict:
-                feature_dict[user].append((day, feature))
+                feature_dict[user].append((day_cpu, feature))
             else:
-                feature_dict[user] = [(day, feature)]
+                feature_dict[user] = [(day_cpu, feature)]
 
-    with open("data/subdata/food_pref.p", mode='wb') as f:
+    with open(outputfile, mode='wb') as f:
         pickle.dump(feature_dict, f)
 
 
@@ -209,32 +232,42 @@ def val(eval, dataloader):
     return gender_correct, age_correct
 
 
-def single_eval(feats, message):
+def single_eval(file, message, nut, param, start, progress, isMLP, max_length):
     print(message)
-    train_dataloader, val_dataloader, feat_size = split_dataloader(feats, 0.7, param.batchSize)
-    eval = Classifier(feat_size)
+    train_dataloader, val_dataloader, test_dataloader = tri_dataloader("data/subdata/classifier/" + file, param.batchSize)
+    network = E2E(nut, param.featDim, isMLP, max_length)
 
-    trainEpochs(eval, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
+    loss = trainEpochs(network, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
-    gender_accuracy, age_accuracy = val(eval, val_dataloader)
-    print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t\t", age_accuracy)
-    print("\n---\n")
+    print(file, "\tFinal Loss: {0:.4f}\t".format(loss), timeSince(start, progress))
+    if isMLP:
+        outputfile = "results/classifier/" + file + "_MLP.p"
+    else:
+        outputfile = "results/classifier/" + file + "_direct.p"
+    extract_feature(network, test_dataloader, day * part, param.featDim, outputfile=outputfile)
 
 if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
+    start = time.time()
 
     parts = [1, 3, 6, 8]
+    parts_sum = [0, 1, 4, 10]
     days = [1, 3, 7]
+    days_sum = [1, 4, 11]
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(5)
 
     for i, part in enumerate(parts):
         for j, day in enumerate(days):
-            filename = "results/classifier/" + str(day) + "_days_" + str(part) + "_parts_all_nut.p"
-            message = str(day) + " days, " + str(part) + "parts, all"
-            single_eval(filename, message)
+            progress = ((parts_sum[i] * 11 + days_sum[j] * parts[i]) * 2 - 1) / (11 * 18 * 2)
+            filename = str(days) + "_days_" + str(parts) + "_parts_31"
+            message = str(day) + " days, " + str(part) + "parts, direct"
+            single_eval(filename, message, 31, param, start, progress, False, part*day)
 
-            filename = "results/classifier/" + str(day) + "_days_" + str(part) + "_parts_major_nut.p"
-            message = str(day) + " days, " + str(part) + "parts, major"
-            single_eval(filename, message)
+
+            # MLP3層版も欲しい
+            progress = (parts_sum[i] * 11 + days_sum[j] * parts[i]) / (11 * 18)
+            filename = "data/subdata/classifier/" + str(days) + "_days_" + str(parts) + "_parts_31"
+            message = str(day) + " days, " + str(part) + "parts, MLP"
+            single_eval(filename, message, 31, param, start, progress, True, part*day)

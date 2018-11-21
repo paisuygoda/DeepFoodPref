@@ -150,28 +150,6 @@ def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
         cur_lr = cur_lr * rate_decay
 
 
-def extract_feature(encoder, datloader, max_length, feat_dim):
-
-    feature_dict = {}
-    for j, (user_id, firstday, original_tensor) in enumerate(datloader):
-        batch_size = original_tensor.size()[0]
-        original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
-        encoder_hidden = False
-        for i in range(max_length):
-            encoder.lstm.flatten_parameters()
-            encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(),
-                                                     encoder_hidden)
-        features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
-        for user, day, feature in zip(user_id, firstday, features):
-            if user in feature_dict:
-                feature_dict[user].append((day, feature))
-            else:
-                feature_dict[user] = [(day, feature)]
-
-    with open("data/subdata/food_pref.p", mode='wb') as f:
-        pickle.dump(feature_dict, f)
-
-
 def val(eval, dataloader):
 
     gender_correct = 0
