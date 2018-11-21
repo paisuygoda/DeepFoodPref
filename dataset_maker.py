@@ -21,10 +21,11 @@ def make_dataset_forcemeals(user_daily_meals, parts=3, days=3, only_major=False)
                 index = math.floor(time / timeband)
                 if index == parts:
                     index = 0
-                for i in range(len(meal)):
-                    if i == 0:
-                        continue
-                    meal[i] /= meal[0]
+                if meal[0] > 0:
+                    for i in range(len(meal)):
+                        if i == 0:
+                            continue
+                        meal[i] /= meal[0]
                 meals_today[index] += np.asarray(meal)
                 meals_list[0] = [day, meals_today]
 
