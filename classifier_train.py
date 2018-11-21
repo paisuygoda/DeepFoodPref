@@ -103,7 +103,7 @@ class E2E(nn.Module):
             self.encoder.lstm.flatten_parameters()
             encoder_output, encoder_hidden = self.encoder(torch.autograd.Variable(input.data.narrow(1, i, 1),
                                                                                   requires_grad=False).cuda(), encoder_hidden)
-        gender_guess, age_guess = self.classifier(encoder_hidden)
+        gender_guess, age_guess = self.classifier(encoder_output)
         return gender_guess, age_guess
 
 
@@ -197,8 +197,8 @@ def extract_feature(network, datloader, max_length, feat_dim, outputfile="result
     for j, (user_id, firstday, original_tensor) in enumerate(datloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
-        _, hidden = network.encoder(original_variable)
-        features = hidden.data.cpu().view(batch_size, feat_dim).numpy()
+        output, _ = network.encoder(original_variable)
+        features = output.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
             day_cpu = day.cpu().numpy()
             if user in feature_dict:
