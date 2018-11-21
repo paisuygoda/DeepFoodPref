@@ -262,13 +262,13 @@ if __name__ == '__main__':
     for i, part in enumerate(parts):
         for j, day in enumerate(days):
             progress = ((parts_sum[i] * 11 + days_sum[j] * parts[i]) * 2 - 1) / (11 * 18 * 2)
-            filename = str(days) + "_days_" + str(parts) + "_parts_31"
+            filename = str(day) + "_days_" + str(part) + "_parts_31"
             message = str(day) + " days, " + str(part) + "parts, direct"
             single_eval(filename, message, 31, param, start, progress, False, part*day)
 
 
             # MLP3層版も欲しい
             progress = (parts_sum[i] * 11 + days_sum[j] * parts[i]) / (11 * 18)
-            filename = str(days) + "_days_" + str(parts) + "_parts_31"
+            filename = str(day) + "_days_" + str(part) + "_parts_31"
             message = str(day) + " days, " + str(part) + "parts, MLP"
             single_eval(filename, message, 31, param, start, progress, True, part*day)
