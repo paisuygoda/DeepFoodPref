@@ -21,6 +21,10 @@ def make_dataset_forcemeals(user_daily_meals, parts=3, days=3, only_major=False)
                 index = math.floor(time / timeband)
                 if index == parts:
                     index = 0
+                for i in range(len(meal)):
+                    if i == 0:
+                        continue
+                    meal[i] /= meal[0]
                 meals_today[index] += np.asarray(meal)
                 meals_list[0] = [day, meals_today]
 
@@ -41,7 +45,7 @@ def make_dataset_forcemeals(user_daily_meals, parts=3, days=3, only_major=False)
             meals_list.insert(0, False)
     print("day: ", days, " parts: ", parts, " num: ", len(final_dataset))
 
-    with open("data/subdata/user_meals_dataset_FM_days_" + str(days) + "_parts_" + str(parts) + "_nut_" + str(nut_num) + ".p", "wb") as f:
+    with open("data/subdata/user_meals_dataset_FM_days_" + str(days) + "_parts_" + str(parts) + "_nut_" + str(nut_num) + "_balance.p", "wb") as f:
         pickle.dump(final_dataset, f)
 
 if __name__ == '__main__':
