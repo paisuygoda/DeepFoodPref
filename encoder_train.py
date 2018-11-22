@@ -74,28 +74,22 @@ class FoodSequenceDataset(Dataset):
 class EncoderLSTM(nn.Module):
     def __init__(self, input_size, hidden_size):
         super(EncoderLSTM, self).__init__()
-        self.hidden_size = hidden_size
         self.lstm = nn.LSTM(input_size, hidden_size)
 
-    def forward(self, input, hidden=False):
-        if hidden:
-            output, hidden = self.lstm(input, hidden)
-        else:
-            output, hidden = self.lstm(input)
+    def forward(self, input):
+        output, hidden = self.lstm(input.transpose_(0, 1))
         return output, hidden
 
 
 class DecoderLSTM(nn.Module):
     def __init__(self, hidden_size, output_size):
         super(DecoderLSTM, self).__init__()
-        self.hidden_size = hidden_size
-
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.fin = nn.ReLU()
 
     def forward(self, input, hidden):
-        output, hidden = self.lstm(input, hidden)
+        output, hidden = self.lstm(input.transpose_(0,1), hidden)
         pred = self.out(output)
         pred = self.fin(pred)
         return output, hidden, pred
@@ -111,10 +105,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
 
     loss = 0.0
 
-    encoder_hidden = False
-    for i in range(max_length):
-        encoder.lstm.flatten_parameters()
-        encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(), encoder_hidden)
+    encoder_output, encoder_hidden = encoder(original_variable)
 
     decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128)), requires_grad=False).cuda()
     decoder_hidden = encoder_hidden

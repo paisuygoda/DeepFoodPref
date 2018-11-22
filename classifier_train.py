@@ -98,11 +98,7 @@ class E2E(nn.Module):
         self.max_length = max_length
 
     def forward(self, input):
-        encoder_hidden = False
-        for i in range(self.max_length):
-            self.encoder.lstm.flatten_parameters()
-            encoder_output, encoder_hidden = self.encoder(torch.autograd.Variable(input.data.narrow(1, i, 1),
-                                                                                  requires_grad=False).cuda(), encoder_hidden)
+        encoder_output, encoder_hidden = self.encoder(input.transpose_(0, 1))
         gender_guess, age_guess = self.classifier(encoder_output)
         return gender_guess, age_guess
 
@@ -144,11 +140,8 @@ class EncoderLSTM(nn.Module):
         super(EncoderLSTM, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size)
 
-    def forward(self, input, hidden=False):
-        if hidden:
-            output, hidden = self.lstm(input, hidden)
-        else:
-            output, hidden = self.lstm(input)
+    def forward(self, input):
+        output, hidden = self.lstm(input.transpose_(0, 1))
         return output, hidden
 
 
@@ -161,8 +154,8 @@ def train(original_tensor, network, gender, age, optimizer, gender_criterion, ag
 
     gender_guess, age_guess = network(original_variable)
 
-    gender_loss = gender_criterion(gender_guess, gender)
-    age_loss = age_criterion(age_guess, age)
+    gender_loss = gender_criterion(gender_guess, gender.cuda())
+    age_loss = age_criterion(age_guess, age.cuda())
 
     loss = gender_loss + age_loss
 
