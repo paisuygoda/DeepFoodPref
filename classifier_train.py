@@ -187,7 +187,7 @@ def trainEpochs(network, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9
 def extract_feature(network, datloader, max_length, feat_dim, outputfile="results/dummy.p"):
 
     feature_dict = {}
-    for j, (user_id, firstday, original_tensor) in enumerate(datloader):
+    for j, (user_id, firstday, original_tensor, gender, age) in enumerate(datloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         output, _ = network.encoder(original_variable)
