@@ -92,7 +92,7 @@ class DecoderLSTM(nn.Module):
         self.fin = nn.ReLU()
 
     def forward(self, input, hidden):
-        output, hidden = self.lstm(input.transpose_(0, 1), hidden)
+        output, hidden = self.lstm(input, hidden)
         pred = self.out(output)
         pred = self.fin(pred)
         return output, hidden, pred
@@ -110,7 +110,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
 
     encoder_output, encoder_hidden = encoder(original_variable)
 
-    decoder_input = torch.autograd.Variable(torch.zeros((batch_size, 1, 128)), requires_grad=False).cuda()
+    decoder_input = torch.autograd.Variable(torch.zeros((1, batch_size, 128)), requires_grad=False).cuda()
     decoder_hidden = encoder_hidden
 
     for di in range(max_length):
