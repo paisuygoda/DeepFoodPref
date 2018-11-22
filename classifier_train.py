@@ -227,13 +227,12 @@ def val(eval, dataloader):
 
 
 def single_eval(file, message, nut, param, start, progress, isMLP, max_length):
-    print(message)
     train_dataloader, val_dataloader, test_dataloader = tri_dataloader("data/subdata/classifier/" + file, param.batchSize)
     network = E2E(nut, param.featDim, isMLP, max_length).cuda()
 
     loss = trainEpochs(network, train_dataloader, param.epoch, learning_rate=param.lr, rate_decay=param.rateDecay)
 
-    print(file, "\tFinal Loss: {0:.4f}\t".format(loss), timeSince(start, progress))
+    print(file, message, "\tFinal Loss: {0:.4f}\t".format(loss), timeSince(start, progress))
     if isMLP:
         outputfile = "results/classifier/" + file + "_MLP.p"
     else:
@@ -256,12 +255,12 @@ if __name__ == '__main__':
         for j, day in enumerate(days):
             progress = ((parts_sum[i] * 11 + days_sum[j] * parts[i]) * 2 - 1) / (11 * 18 * 2)
             filename = str(day) + "_days_" + str(part) + "_parts_31"
-            message = str(day) + " days, " + str(part) + "parts, direct"
+            message = "direct"
             single_eval(filename, message, 31, param, start, progress, False, part*day)
 
 
             # MLP3層版も欲しい
             progress = (parts_sum[i] * 11 + days_sum[j] * parts[i]) / (11 * 18)
             filename = str(day) + "_days_" + str(part) + "_parts_31"
-            message = str(day) + " days, " + str(part) + "parts, MLP"
+            message = "MLP"
             single_eval(filename, message, 31, param, start, progress, True, part*day)
