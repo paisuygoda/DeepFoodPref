@@ -119,7 +119,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
         decoder_input = decoder_output.detach()  # detach from history as input
 
         addloss = criterion(pred.view(batch_size, numnut),
-                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, numnut).float(), requires_grad=False))
+                          torch.autograd.Variable(original_variable.data.narrow(di, 1, 1).contiguous().view(batch_size, numnut).float(), requires_grad=False))
 
         loss += addloss
 

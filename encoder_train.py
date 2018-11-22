@@ -116,7 +116,7 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
         decoder_input = decoder_output.detach()  # detach from history as input
 
         addloss = criterion(pred.view(batch_size, 31),
-                          torch.autograd.Variable(original_variable.data.narrow(1, di, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
+                          torch.autograd.Variable(original_variable.data.narrow(di, 1, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
 
         # if addloss > 1.0:
         #     print(addloss)
