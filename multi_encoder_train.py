@@ -158,7 +158,7 @@ def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/s
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         encoder_output, encoder_hidden = encoder(original_variable)
-        features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
+        features = encoder_output[max_length - 1].data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
             day_cpu = day.cpu().numpy()
             if user in feature_dict:

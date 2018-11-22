@@ -99,7 +99,7 @@ class E2E(nn.Module):
 
     def forward(self, input):
         encoder_output, encoder_hidden = self.encoder(input.transpose_(0, 1))
-        gender_guess, age_guess = self.classifier(encoder_output)
+        gender_guess, age_guess = self.classifier(encoder_output[encoder_output.sizee()[0] - 1])
         return gender_guess, age_guess
 
 
