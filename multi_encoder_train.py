@@ -51,7 +51,7 @@ def get_parser():
     parser.add_argument('--batchSize', default=512, type=int)
     parser.add_argument('--maxLength', default=9, type=int)
     parser.add_argument('--epoch', default=200, type=int)
-    parser.add_argument('--lr', default=0.1, type=float)
+    parser.add_argument('--lr', default=0.001, type=float)
     parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
 

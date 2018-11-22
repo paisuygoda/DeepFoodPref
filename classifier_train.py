@@ -98,7 +98,7 @@ class E2E(nn.Module):
         self.max_length = max_length
 
     def forward(self, input):
-        encoder_output, encoder_hidden = self.encoder(input.transpose_(0, 1))
+        encoder_output, encoder_hidden = self.encoder(input)
         gender_guess, age_guess = self.classifier(encoder_output[encoder_output.sizee()[0] - 1])
         return gender_guess, age_guess
 
@@ -154,6 +154,8 @@ def train(original_tensor, network, gender, age, optimizer, gender_criterion, ag
 
     gender_guess, age_guess = network(original_variable)
 
+    gender = gender.view(batch_size, 1)
+    age = age.view(batch_size, 1)
     gender_loss = gender_criterion(gender_guess, gender.cuda())
     age_loss = age_criterion(age_guess, age.cuda())
 
