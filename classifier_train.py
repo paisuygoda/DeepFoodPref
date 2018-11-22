@@ -191,7 +191,7 @@ def extract_feature(network, datloader, max_length, feat_dim, outputfile="result
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
         output, _ = network.encoder(original_variable)
-        features = output.data.cpu().view(batch_size, feat_dim).numpy()
+        features = output[output.size()[0] - 1].data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
             day_cpu = day.cpu().numpy()
             if user in feature_dict:
@@ -262,5 +262,5 @@ if __name__ == '__main__':
             # MLP3層版も欲しい
             progress = (parts_sum[i] * 11 + days_sum[j] * parts[i]) / (11 * 18)
             filename = str(day) + "_days_" + str(part) + "_parts_31"
-            message = "MLP"
+            message = "MLP\t"
             single_eval(filename, message, 31, param, start, progress, True, part*day)
