@@ -157,11 +157,7 @@ def extract_feature(encoder, datloader, max_length, feat_dim, outputfile="data/s
     for j, (user_id, firstday, original_tensor) in enumerate(datloader):
         batch_size = original_tensor.size()[0]
         original_variable = torch.autograd.Variable(original_tensor.float(), requires_grad=False).cuda()
-        encoder_hidden = False
-        for i in range(max_length):
-            encoder.lstm.flatten_parameters()
-            encoder_output, encoder_hidden = encoder(torch.autograd.Variable(original_variable.data.narrow(1, i, 1), requires_grad=False).cuda(),
-                                                     encoder_hidden)
+        encoder_output, encoder_hidden = encoder(original_variable)
         features = encoder_output.data.cpu().view(batch_size, feat_dim).numpy()
         for user, day, feature in zip(user_id, firstday, features):
             day_cpu = day.cpu().numpy()
