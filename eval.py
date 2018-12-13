@@ -107,7 +107,7 @@ class Classifier(nn.Module):
     def __init__(self, input_size):
         super(Classifier, self).__init__()
         self.gender = nn.Linear(input_size, 2)
-        self.age = nn.Linear(input_size, 7)
+        self.age = nn.Linear(input_size, 3)
         self.user = nn.Linear(input_size, 100)
 
     def forward(self, input):
