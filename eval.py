@@ -124,7 +124,7 @@ def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
     gender_guess, age_guess = eval(feat)
 
     gender_loss = gender_criterion(gender_guess, gender)
-    age_loss = age_criterion(age_guess, age)
+    age_loss = age_criterion(age_guess, age.float())
 
     loss = gender_loss + age_loss
 
@@ -143,7 +143,7 @@ def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
 
     for i in range(1, n_epoch+1):
         for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
-            train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion)
+            train(feat, gender, age.float().view(age.size()[0], 1), eval, optimizer, gender_criterion, age_criterion)
 
         for param_group in optimizer.param_groups:
             param_group['lr'] = cur_lr
@@ -156,7 +156,7 @@ def val(eval, dataloader):
     age_correct = 0
     gender_count = 0
     age_count = 0
-    mseloss = nn.MSELoss()
+    mseloss = nn.MSELoss().cuda()
     for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
         gender_guess, age_guess = eval(feat)
 
@@ -165,7 +165,7 @@ def val(eval, dataloader):
         gender_correct += (predicted == gender).sum()
 
         age_count += 1
-        loss = mseloss(age_guess.data, age)
+        loss = mseloss(age_guess.data, age.float().view(age.size()[0]))
         age_correct += loss.data.cpu().numpy()
 
     gender_correct = int(gender_correct) / int(gender_count) * 100
