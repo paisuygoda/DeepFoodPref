@@ -64,13 +64,13 @@ def split_dataloader(file, split_rate, batch_size):
     val_list = []
     skipcount = 0
     for user_id, d_list in base.items():
-        (gender, age, birthday) = att[user_id]
+        (gender, age_group, age, birthday) = att[user_id]
 
         if gender == 0 or age == 0:
             skipcount += 1
             continue
         gender -= 1
-        age -= 1
+        age_group -= 1
         for (day, feat) in d_list:
             if np.random.rand() < split_rate:
                 train_list.append((user_id, day, feat, gender, age))
@@ -107,7 +107,7 @@ class Classifier(nn.Module):
     def __init__(self, input_size):
         super(Classifier, self).__init__()
         self.gender = nn.Linear(input_size, 2)
-        self.age = nn.Linear(input_size, 3)
+        self.age = nn.Linear(input_size, 80)
         self.user = nn.Linear(input_size, 100)
 
     def forward(self, input):
@@ -157,6 +157,7 @@ def val(eval, dataloader):
     gender_count = 0
     age_count = 0
     for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
+        print(feat, user_id, gender, age, firstday)
         gender_guess, age_guess = eval(feat)
 
         _, predicted = torch.max(gender_guess.data, 1)
