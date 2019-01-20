@@ -169,7 +169,7 @@ def val(eval, dataloader):
         age_correct += loss.data.cpu().numpy()
 
     gender_correct = int(gender_correct) / int(gender_count) * 100
-    age_correct = math.sqrt(float(age_correct) / age_count)
+    age_correct = math.sqrt(float(age_correct) / age_count) * 100
 
     return gender_correct, age_correct
 
