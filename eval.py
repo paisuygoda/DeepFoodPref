@@ -157,7 +157,6 @@ def val(eval, dataloader):
     gender_count = 0
     age_count = 0
     for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
-        print(feat, user_id, gender, age, firstday)
         gender_guess, age_guess = eval(feat)
 
         _, predicted = torch.max(gender_guess.data, 1)
