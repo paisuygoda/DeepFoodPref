@@ -165,7 +165,7 @@ def val(eval, dataloader):
         gender_correct += (predicted == gender).sum()
 
         age_count += 1
-        loss = mseloss(age_guess.data, age.float().view(age.size()[0]))
+        loss = mseloss(age_guess.data, age.float().view(age.size()[0], 1))
         age_correct += loss.data.cpu().numpy()
 
     gender_correct = int(gender_correct) / int(gender_count) * 100
