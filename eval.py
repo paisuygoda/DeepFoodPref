@@ -55,6 +55,7 @@ def get_parser():
     parser.add_argument('--rateDecay', default=0.95, type=float)
     return parser
 
+
 def split_dataloader(file, split_rate, batch_size):
     with open(file, mode='rb') as f:
         base = pickle.load(f)
@@ -99,7 +100,7 @@ class FoodPrefDataset(Dataset):
         firstday = self.ds[idx][1]
         feat = self.ds[idx][2]
         gender = self.ds[idx][3]
-        age = self.ds[idx][4]
+        age = self.ds[idx][4] / 100
         return feat, user_id, gender, age, firstday
 
 
@@ -107,7 +108,7 @@ class Classifier(nn.Module):
     def __init__(self, input_size):
         super(Classifier, self).__init__()
         self.gender = nn.Linear(input_size, 2)
-        self.age = nn.Linear(input_size, 80)
+        self.age = nn.Linear(input_size, 1)
         self.user = nn.Linear(input_size, 100)
 
     def forward(self, input):
@@ -134,16 +135,15 @@ def train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion):
 
 
 def trainEpochs(eval, dataloader, n_epoch, learning_rate=0.01, rate_decay=0.9):
-    start = time.time()
     cur_lr = learning_rate
 
     optimizer = optim.Adam(eval.parameters(), lr=learning_rate)
     gender_criterion = nn.CrossEntropyLoss().cuda()
-    age_criterion = nn.CrossEntropyLoss().cuda()
+    age_criterion = nn.MSELoss().cuda()
 
     for i in range(1, n_epoch+1):
         for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
-            loss = train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion)
+            train(feat, gender, age, eval, optimizer, gender_criterion, age_criterion)
 
         for param_group in optimizer.param_groups:
             param_group['lr'] = cur_lr
@@ -156,6 +156,7 @@ def val(eval, dataloader):
     age_correct = 0
     gender_count = 0
     age_count = 0
+    mseloss = nn.MSELoss()
     for j, (feat, user_id, gender, age, firstday) in enumerate(dataloader):
         gender_guess, age_guess = eval(feat)
 
@@ -163,12 +164,12 @@ def val(eval, dataloader):
         gender_count += gender.size(0)
         gender_correct += (predicted == gender).sum()
 
-        _, predicted = torch.max(age_guess.data, 1)
-        age_count += age.size(0)
-        age_correct += (predicted == age).sum()
+        age_count += 1
+        loss = mseloss(age_guess.data, age)
+        age_correct += loss.data.cpu().numpy()
 
     gender_correct = int(gender_correct) / int(gender_count) * 100
-    age_correct = int(age_correct) / int(age_count) * 100
+    age_correct = math.sqrt(float(age_correct) / age_count)
 
     return gender_correct, age_correct
 
