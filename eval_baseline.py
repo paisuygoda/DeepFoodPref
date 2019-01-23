@@ -199,9 +199,9 @@ def make_dataset_forcemeals():
                     meals_list[i] += np.asarray(meal)
             if len(meals_list) == 7:
                 if user_id in final_dataset:
-                    final_dataset[user_id].append((day, meals_list[0]))
+                    final_dataset[user_id].append((day, torch.FloatTensor(meals_list[0] / 7)))
                 else:
-                    final_dataset[user_id] = [(day, meals_list[0])]
+                    final_dataset[user_id] = [(day, torch.FloatTensor(meals_list[0] / 7))]
                 meals_list = meals_list[1:]
 
     with open("data/subdata/user_meals_dataset_baseline_7day_1part_average.p", "wb") as f:
