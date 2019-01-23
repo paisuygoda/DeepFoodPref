@@ -111,9 +111,8 @@ def train(original_tensor, encoder, decoder, encoder_optimizer, decoder_optimize
     decoder_hidden = encoder_hidden
 
     for di in range(max_length):
-        decoder.lstm.flatten_parameters()
         decoder_output, decoder_hidden, pred = decoder(decoder_input, decoder_hidden)
-        decoder_input = pred  # detach from history as input
+        decoder_input = decoder_hidden[0]  # detach from history as input
 
         addloss = criterion(pred.view(batch_size, 31),
                           torch.autograd.Variable(original_variable.data.narrow(0, di, 1).contiguous().view(batch_size, 31).float(), requires_grad=False))
