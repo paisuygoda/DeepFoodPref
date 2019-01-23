@@ -188,7 +188,7 @@ def single_eval(feats, message):
 def make_dataset_forcemeals():
     with open('data/subdata/user_daily_meals.p', mode='rb') as f:
         user_daily_meals = pickle.load(f)
-    final_dataset = False
+    final_dataset = {}
     nut_num = 31
     for user_id, daily_meals in user_daily_meals.items():
         meals_list = []
@@ -198,10 +198,10 @@ def make_dataset_forcemeals():
                 for i in range(len(meals_list)):
                     meals_list[i] += np.asarray(meal)
             if len(meals_list) == 7:
-                if type(final_dataset) != list:
-                    final_dataset = [(user_id, day, meals_list[0])]
+                if user_id in final_dataset:
+                    final_dataset[user_id].append((day, meals_list[0]))
                 else:
-                    final_dataset.append((user_id, day, meals_list[0]))
+                    final_dataset[user_id] = [(day, meals_list[0])]
                 meals_list = meals_list[1:]
 
     with open("data/subdata/user_meals_dataset_baseline_7day_1part_average.p", "wb") as f:
