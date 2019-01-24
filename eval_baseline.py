@@ -65,6 +65,8 @@ def split_dataloader(file, split_rate, batch_size):
     val_list = []
     skipcount = 0
     for user_id, d_list in base.items():
+        if type(user_id) == int:
+            user_id = str(user_id)
         (gender, age_group, age, birthday) = att[user_id]
 
         if gender == 0 or age == 0:
@@ -74,9 +76,9 @@ def split_dataloader(file, split_rate, batch_size):
         age_group -= 1
         for (day, feat) in d_list:
             if np.random.rand() < split_rate:
-                train_list.append((user_id, day, feat, gender, age))
+                train_list.append((user_id, day, torch.FloatTensor(feat), gender, age))
             else:
-                val_list.append((user_id, day, feat, gender, age))
+                val_list.append((user_id, day, torch.FloatTensor(feat), gender, age))
 
     train_dataset = FoodPrefDataset(train_list)
     val_dataset = FoodPrefDataset(val_list)
@@ -225,12 +227,12 @@ if __name__ == '__main__':
 
     dims = [2,5,10,20,30,50,100,200]
     terms = [1,7,14,30,60]
-    for i, part in enumerate(dims):
+    for i, part in dims:
         filename = "data/subdata/user_vec_by_bow_" + str(i) + "dim_30_day.p"
         message = "30 days " + str(i) + "dim"
         single_eval(filename, message)
 
-    for j, day in enumerate(terms):
+    for j, day in terms:
         filename = "data/subdata/user_vec_by_bow_20dim_" + str(j) + "_day.p"
         message = str(j) + " days 20 dim"
         single_eval(filename, message)
