@@ -184,6 +184,9 @@ def single_eval(feats, message):
     gender_accuracy, age_accuracy = val(eval, val_dataloader)
     print("Gender Accuracy:\t", gender_accuracy, "\nAge Accuracy:\t\t", age_accuracy)
     print("\n---\n")
+    with open("results/bof.csv", "a") as f:
+        f.write(message + "," + str(round(gender_accuracy,2)))
+        f.write(message + "," + str(round(age_accuracy, 2)))
 
 def make_dataset_forcemeals():
     with open('data/subdata/user_daily_meals.p', mode='rb') as f:
@@ -216,6 +219,19 @@ if __name__ == '__main__':
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(5)
 
-    filename = "data/subdata/user_meals_dataset_baseline_7day_1part_average.p"
-    message = "baseline - only sum"
-    single_eval(filename, message)
+    # filename = "data/subdata/user_meals_dataset_baseline_7day_1part_average.p"
+    # message = "baseline - only sum"
+    # single_eval(filename, message)
+
+    dims = [2,5,10,20,30,50,100,200]
+    terms = [1,7,14,30,60]
+    for i, part in enumerate(dims):
+        filename = "data/subdata/user_vec_by_bow_" + str(i) + "dim_30_day.p"
+        message = "30 days " + str(i) + "dim"
+        single_eval(filename, message)
+
+    for j, day in enumerate(terms):
+        filename = "data/subdata/user_vec_by_bow_20dim_" + str(j) + "_day.p"
+        message = str(j) + " days 20 dim"
+        single_eval(filename, message)
+
