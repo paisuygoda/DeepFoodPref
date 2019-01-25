@@ -209,31 +209,51 @@ def make_dataset_forcemeals():
                     final_dataset[user_id] = [(day, torch.FloatTensor(meals_list[0] / 7))]
                 meals_list = meals_list[1:]
 
-    with open("data/subdata/user_meals_dataset_baseline_7day_1part_average.p", "wb") as f:
+
+def make_dataset_forcemeals_singlemeal():
+    with open('data/subdata/user_daily_meals.p', mode='rb') as f:
+        user_daily_meals = pickle.load(f)
+    final_dataset = {}
+    nut_num = 31
+    for user_id, daily_meals in user_daily_meals.items():
+        meals_list = []
+        for day, meals in sorted(daily_meals.items()):
+            meals_list.append([np.asarray(np.zeros(nut_num)), 0])
+            for time, meal in meals:
+                for i in range(len(meals_list)):
+                    meals_list[i][0] += np.asarray(meal)
+                    meals_list[i][1] += 1
+            if len(meals_list) == 7:
+                if user_id in final_dataset:
+                    final_dataset[user_id].append((day, torch.FloatTensor(meals_list[0][0] / meals_list[0][1])))
+                else:
+                    final_dataset[user_id] = [(day, torch.FloatTensor(meals_list[0][0] / meals_list[0][1]))]
+                meals_list = meals_list[1:]
+
+    with open("data/subdata/user_meals_dataset_baseline_7day_1part_average_meal.p", "wb") as f:
         pickle.dump(final_dataset, f)
 
 if __name__ == '__main__':
     parser = get_parser()
     param = parser.parse_args()
 
-    make_dataset_forcemeals()
+    make_dataset_forcemeals_singlemeal()
 
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(5)
 
-    # filename = "data/subdata/user_meals_dataset_baseline_7day_1part_average.p"
-    # message = "baseline - only sum"
-    # single_eval(filename, message)
+    filename = "data/subdata/user_meals_dataset_baseline_7day_1part_average_meal.p"
+    message = "baseline - single meal"
+    single_eval(filename, message)
 
-    dims = [2,5,10,20,30,50,100,200]
-    terms = [1,7,14,30,60]
-    for i, part in dims:
-        filename = "data/subdata/user_vec_by_bow_" + str(i) + "dim_30_day.p"
-        message = "30 days " + str(i) + "dim"
-        single_eval(filename, message)
-
-    for j, day in terms:
-        filename = "data/subdata/user_vec_by_bow_20dim_" + str(j) + "_day.p"
-        message = str(j) + " days 20 dim"
-        single_eval(filename, message)
-
+    # dims = [2,5,10,20,30,50,100,200]
+    # terms = [1,7,14,30,60]
+    # for i in dims:
+    #     filename = "data/subdata/user_vec_by_bow_" + str(i) + "dim_30_day.p"
+    #     message = "30 days " + str(i) + "dim"
+    #     single_eval(filename, message)
+    #
+    # for j in terms:
+    #     filename = "data/subdata/user_vec_by_bow_20dim_" + str(j) + "_day.p"
+    #     message = str(j) + " days 20 dim"
+    #     single_eval(filename, message)
